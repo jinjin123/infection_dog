@@ -1,6 +1,6 @@
 # Infection
 
-###machine info
+### machine info
 - startup time
 - current user
 - hostname
@@ -14,11 +14,11 @@
 - location
 - bandwidth
 
-###human info
+### human info
 - keyboard hitting input
 - browser search input
 
-###IoT Infection 
+### IoT Infection 
 - router
 - mobile
 - iot device 
