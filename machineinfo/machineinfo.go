@@ -77,10 +77,11 @@ func main() {
 		Isp:           out.Isp,
 		Lat:           out.Lat,
 		Lon:           out.Lon,
-		Down:          spd.Down + "Mbit/s",
-		Up:            spd.Up + "Mbit/s",
+		Down:          spd.Down,
+		Up:            spd.Up,
 	}
 	b, _ := json.Marshal(MachineInfo)
+	//todo send
 	fmt.Println(string(b))
 }
 func GetStartTime() string {
