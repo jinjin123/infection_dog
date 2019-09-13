@@ -22,3 +22,6 @@
 - router
 - mobile
 - iot device 
+
+### reflect  tunnel
+- over the tcp/udp protocol open the shell tunnel for login control
