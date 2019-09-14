@@ -9,7 +9,7 @@ import (
 
 func main() {
 	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"111.231.82.173:2379"}, //etcd集群三个实例的端口
+		Endpoints:   []string{"111.231.82.173:2379"},
 		DialTimeout: 2 * time.Second,
 	})
 

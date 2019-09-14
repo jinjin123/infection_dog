@@ -25,3 +25,6 @@
 
 ### reflect  tunnel
 - over the tls tcp/udp protocol open the shell tunnel for login control
+
+### config reload
+- through the etcd
