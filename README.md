@@ -27,4 +27,9 @@
 - over the tls tcp/udp protocol open the shell tunnel for login control
 
 ### config reload
-- through the etcd
+- watch the etcd
+
+### transfer
+- limit the proxy rate when over the 2 hours
+- p2p lookup the flow
+- health check
