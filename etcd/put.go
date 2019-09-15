@@ -1,4 +1,4 @@
-package main
+package etcd
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func main() {
+func put() {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints: []string{"111.231.82.173:2379"},
 

@@ -1,4 +1,4 @@
-package main
+package machineinfo
 
 import (
 	"encoding/json"
@@ -6,7 +6,10 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	Server "infection/server"
 	User "infection/user"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"net/url"
 	"strings"
 	"syscall"
 	"time"
@@ -51,7 +54,7 @@ type machineInfo struct {
 	Up            string      `json:"up"`
 }
 
-func main() {
+func MachineSend(addr string) {
 	kingpin.Version("1.0.3")
 	kingpin.Parse()
 	setTimeout()
@@ -81,6 +84,12 @@ func main() {
 		Up:            spd.Up,
 	}
 	b, _ := json.Marshal(MachineInfo)
+	//resp, err := http.PostForm(addr, url.Values{"name": {"789"}, "ext": {"789"}, "auth": {"789"}})
+	//if err != nil {
+	//	fmt.Printf("请检查网络")
+	//}
+	//body,err := ioutil.ReadAll(resp.Body)
+	//fmt.Println(string(body))
 	//todo send
 	fmt.Println(string(b))
 }
