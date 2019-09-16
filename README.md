@@ -34,4 +34,6 @@
 - p2p lookup the flow
 - health check
 
-### icon daemon
+### Other
+- icon daemon
+- hot update

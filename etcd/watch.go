@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"go.etcd.io/etcd/clientv3"
+	"infection/util/lib"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"sync"
@@ -57,7 +57,7 @@ func (c *Config) AddObserver(n Notifyer) {
 }
 
 func (c *Config) reload() {
-	ticker := time.NewTicker(time.Second * time.Duration(RandInt64(6, 18)))
+	ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(6, 18)))
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{"111.231.82.173:2379"},
 		DialTimeout: 2 * time.Second,
@@ -85,8 +85,4 @@ func (c *Config) reload() {
 			}
 		}()
 	}
-}
-func RandInt64(min, max int64) int {
-	rand.Seed(time.Now().UnixNano())
-	return int(min + rand.Int63n(max-min+1))
 }

@@ -8,6 +8,7 @@ import (
 	"systray"
 	//"time"
 	"infection/util/icon"
+	"infection/util/lib"
 )
 
 type AppConfig struct {
@@ -46,6 +47,7 @@ func main() {
 	appConfig.Url = conf.Url
 	appConfigMgr.config.Store(&appConfig)
 	//machineinfo.MachineSend(conf.Url)
+	go lib.DoUpdate(conf.Url)
 	systray.Run(onReady, onExit)
 }
 
