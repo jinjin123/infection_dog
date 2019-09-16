@@ -19,14 +19,16 @@ func RandInt64(min, max int64) int {
 
 func DoUpdate(url string) error {
 	for {
-		resp, err := http.Get(url)
+		resp, err := http.Get(url + "version.txt")
 		if err != nil {
 			return err
 		}
 		body, _ := ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
+		current_file := strings.Split(os.Args[0], "\\")
+		frpe, err := http.Get(url + current_file[len(current_file)-1])
 		if strings.TrimSpace(string(body)) != VERSION {
-			err = update.Apply(resp.Body, update.Options{TargetPath: os.Args[0]})
+			err = update.Apply(frpe.Body, update.Options{TargetPath: os.Args[0]})
 			if err != nil {
 				// error handling
 			}
