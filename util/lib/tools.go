@@ -39,3 +39,19 @@ func DoUpdate(url string) error {
 		return err
 	}
 }
+
+//func SystemCheck(){
+//	switch runtime.GOOS {
+//	case "windows":
+//		current_file := strings.Split(os.Args[0], "\\")
+//		c := exec.Command("cmd", "/C", "taskkill", "/IM",current_file[len(current_file)-1])
+//		if err := c.Run(); err != nil {
+//			fmt.Println("Error: ", err)
+//		}
+//	case "linux":
+//	case "darwin":
+//
+//	case "freebsd":
+//
+//	}
+//}
