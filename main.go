@@ -29,7 +29,6 @@ func (a *AppConfigMgr) Callback(conf *etcd.Config) {
 func onReady() {
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("freedom")
-	systray.SetTooltip("running...")
 	mQuit := systray.AddMenuItem("Quit", "Quit freedom")
 	start := systray.AddMenuItem("Start", "Start")
 	stop := systray.AddMenuItem("Stop", "Stop")
@@ -44,10 +43,12 @@ func onReady() {
 			start.Check()
 			stop.Uncheck()
 			start.SetTitle("Start")
+			systray.SetTooltip("running")
 		case <-stop.ClickedCh:
 			stop.Check()
 			start.Uncheck()
 			stop.SetTitle("Stop")
+			systray.SetTooltip("stop")
 		}
 	}
 }
