@@ -17,7 +17,7 @@ import (
 	//"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/host"
 	//"github.com/shirou/gopsutil/mem"
-	"github.com/StackExchange/wmi"
+	"infection/util/lib/wmi"
 )
 
 var (
