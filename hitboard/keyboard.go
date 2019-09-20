@@ -1,8 +1,8 @@
 package hitboard
 
 import (
-	"fmt"
 	"github.com/AllenDang/w32"
+	"log"
 	"syscall"
 	"time"
 )
@@ -22,7 +22,7 @@ func KeyBoardCollection() {
 	elapsedsec := int64(elapsed/time.Millisecond) / 1000
 	for {
 		time.Sleep(60 * time.Millisecond)
-		fmt.Println(tmpKeylog)
+		log.Println(tmpKeylog)
 		elapsed := time.Since(start)
 		elapsedsec = int64(elapsed/time.Millisecond) / 1000
 		// 1mins 60s   hitting 180 times keyboard
@@ -34,7 +34,7 @@ func KeyBoardCollection() {
 			tmpKeylog = ""
 			continue
 		}
-		fmt.Println(tmpKeylog, "-----")
+		log.Println(tmpKeylog, "-----")
 		for KEY := 0; KEY <= 256; KEY++ {
 			Val, _, _ := procGetAsyncKeyState.Call(uintptr(KEY))
 			if Val&0x1 == 0 {

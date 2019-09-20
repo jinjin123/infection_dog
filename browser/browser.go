@@ -1,7 +1,6 @@
 package browser
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -69,7 +68,7 @@ func get_current_user() string {
 
 func check(err error) {
 	if err != nil {
-		fmt.Println("Error ", err.Error())
+		log.Println("Error ", err.Error())
 		time.Sleep(3 * time.Second)
 		os.Exit(1)
 	}

@@ -1,8 +1,8 @@
 package request
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,7 +17,7 @@ var client = http.Client{}
 
 func DownloadTest(sURL string, latency time.Duration) float64 {
 	dlURL := strings.Split(sURL, "/upload")[0]
-	fmt.Printf("Download Test: ")
+	log.Printf("Download Test: ")
 	wg := new(sync.WaitGroup)
 
 	// Warming up
@@ -58,7 +58,7 @@ func DownloadTest(sURL string, latency time.Duration) float64 {
 		}
 		wg.Wait()
 		fTime = time.Now()
-		fmt.Printf("\n")
+		log.Printf("\n")
 
 		reqMB := dlSizes[weight] * dlSizes[weight] * 2 / 1000 / 1000
 		dlSpeed = float64(reqMB) * 8 * float64(workload) / fTime.Sub(sTime).Seconds()
@@ -68,7 +68,7 @@ func DownloadTest(sURL string, latency time.Duration) float64 {
 }
 
 func UploadTest(sURL string, latency time.Duration) float64 {
-	fmt.Printf("Upload Test: ")
+	log.Printf("Upload Test: ")
 	wg := new(sync.WaitGroup)
 
 	// Warm up
@@ -110,7 +110,7 @@ func UploadTest(sURL string, latency time.Duration) float64 {
 		}
 		wg.Wait()
 		fTime = time.Now()
-		fmt.Printf("\n")
+		log.Printf("\n")
 
 		reqMB := float64(ulSizes[weight]) / 1000
 		ulSpeed = reqMB * 8 * float64(workload) / fTime.Sub(sTime).Seconds()
@@ -150,7 +150,7 @@ func downloadRequest(wg *sync.WaitGroup, dlURL string, w int) {
 	defer resp.Body.Close()
 	ioutil.ReadAll(resp.Body)
 
-	fmt.Printf(".")
+	log.Printf(".")
 	wg.Done()
 }
 
@@ -163,7 +163,7 @@ func uploadRequest(wg *sync.WaitGroup, ulURL string, w int) {
 	defer resp.Body.Close()
 	ioutil.ReadAll(resp.Body)
 
-	fmt.Printf(".")
+	log.Printf(".")
 	wg.Done()
 }
 
@@ -181,6 +181,6 @@ func PingTest(sURL string) time.Duration {
 		}
 	}
 
-	fmt.Println("Latency:", (l / 2.0))
+	log.Println("Latency:", (l / 2.0))
 	return l / 2.0
 }

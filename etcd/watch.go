@@ -3,10 +3,10 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"go.etcd.io/etcd/clientv3"
 	"infection/util/lib"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -34,12 +34,12 @@ func NewConfig() (conf *Config, err error) {
 	conf = &Config{}
 	resp, err := http.PostForm("http://111.231.82.173:9000/auth", url.Values{"name": {"789"}, "ext": {"789"}, "auth": {"789"}})
 	if err != nil {
-		fmt.Printf("请检查网络")
+		log.Printf("请检查网络")
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err := json.Unmarshal([]byte(body), &public); err == nil {
 		if public.Code == -1 {
-			fmt.Println(`Error:`, public.Msg)
+			log.Println(`Error:`, public.Msg)
 		} else {
 			conf.rwLock.Lock()
 			conf.Url = public.RemoteAddr
@@ -56,6 +56,7 @@ func (c *Config) AddObserver(n Notifyer) {
 	c.notifyList = append(c.notifyList, n)
 }
 
+//get real server
 func (c *Config) reload() {
 	ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(6, 18)))
 	cli, err := clientv3.New(clientv3.Config{
@@ -63,17 +64,17 @@ func (c *Config) reload() {
 		DialTimeout: 2 * time.Second,
 	})
 	if err != nil {
-		fmt.Println("connect failed, err:", err)
+		log.Println("connect failed, err:", err)
 		return
 	}
-	fmt.Println("connect succ")
+	log.Println("connect succ")
 	defer cli.Close()
 	for _ = range ticker.C {
 		func() {
 			rch := cli.Watch(context.Background(), "/url/ip/")
 			for wresp := range rch {
 				for _, ev := range wresp.Events {
-					//fmt.Printf("%s %q:%q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+					//log.Printf("%s %q:%q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
 					c.rwLock.Lock()
 					c.Url = string(ev.Kv.Value)
 					c.rwLock.Unlock()

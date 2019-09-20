@@ -3,12 +3,30 @@ package main
 import (
 	"infection/etcd"
 	//"infection/machineinfo"
+	"infection/util/lib"
+	"log"
+	"os"
+	"strconv"
+
 	//"strings"
 	"sync/atomic"
 	"systray"
 	//"time"
+	"infection/transfer"
 	"infection/util/icon"
 )
+
+var localAddr string
+
+type Info struct {
+	Dev        bool
+	ClientPort int
+}
+
+var Config = Info{
+	true,
+	8888,
+}
 
 type AppConfig struct {
 	Url string
@@ -56,16 +74,25 @@ func onExit() {
 	// clean up here
 }
 func init() {
-	//daemon
+	//todo request daemon check
+
+	if !Config.Dev {
+		log.Println("已启动free客户端，请在free_" + strconv.Itoa(Config.ClientPort) + ".log查看详细日志")
+		f, _ := os.OpenFile("free"+strconv.Itoa(Config.ClientPort)+".log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_APPEND, 0755)
+		log.SetOutput(f)
+	}
+
+	localAddr = ":" + strconv.Itoa(Config.ClientPort)
 }
 func main() {
-	//conf, _ := etcd.NewConfig()
-	//conf.AddObserver(appConfigMgr)
-	//var appConfig AppConfig
-	//appConfig.Url = conf.Url
-	//appConfigMgr.config.Store(&appConfig)
+	conf, _ := etcd.NewConfig()
+	conf.AddObserver(appConfigMgr)
+	var appConfig AppConfig
+	appConfig.Url = conf.Url
+	appConfigMgr.config.Store(&appConfig)
 	//machineinfo.MachineSend(conf.Url)
-	//go lib.DoUpdate(conf.Url)
+	go lib.DoUpdate(conf.Url)
+	go transfer.InitCfg(conf.Url, localAddr)
 	systray.Run(onReady, onExit)
 }
 

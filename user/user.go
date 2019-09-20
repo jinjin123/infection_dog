@@ -3,8 +3,8 @@ package user
 import (
 	"bytes"
 	"encoding/xml"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -41,7 +41,7 @@ func FetchUserInfo() User {
 		}
 	}
 	if users.Users == nil {
-		fmt.Println("Warning: Cannot fetch user information. http://www.speedtest.net/speedtest-config.php is temporarily unavailable.")
+		log.Println("Warning: Cannot fetch user information. http://www.speedtest.net/speedtest-config.php is temporarily unavailable.")
 		return User{}
 	}
 	return users.Users[0]
@@ -63,7 +63,7 @@ func (u *User) Show() *Outboud {
 			Lat: u.Lat,
 			Lon: u.Lon,
 		}
-		//outboud,_ :=fmt.Println("Testing From IP: " + u.IP + " (" + u.Isp + ") [" + u.Lat + ", " + u.Lon + "]")
+		//outboud,_ :=log.Println("Testing From IP: " + u.IP + " (" + u.Isp + ") [" + u.Lat + ", " + u.Lon + "]")
 		return &out
 	}
 	return &Outboud{}
