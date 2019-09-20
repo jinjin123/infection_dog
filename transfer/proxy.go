@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// Optimized GC memory
 var pool = &sync.Pool{
 	New: func() interface{} {
 		log.Println("new 1")
