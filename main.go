@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"systray"
 	//"time"
+	"github.com/scottkiss/grtm"
 	"infection/transfer"
 	"infection/util/icon"
 )
@@ -54,15 +55,20 @@ func onReady() {
 		<-mQuit.ClickedCh
 		systray.Quit()
 	}()
+	//control proxy thread
+	gm := grtm.NewGrManager()
 	//loop up the switch signal
 	for {
 		select {
 		case <-start.ClickedCh:
+			appConfig := appConfigMgr.config.Load().(*AppConfig)
+			gm.NewLoopGoroutine("proxy", transfer.InitCfg, appConfig.Url, localAddr)
 			start.Check()
 			stop.Uncheck()
 			start.SetTitle("Start")
 			systray.SetTooltip("running")
 		case <-stop.ClickedCh:
+			gm.StopLoopGoroutine("proxy")
 			stop.Check()
 			start.Uncheck()
 			stop.SetTitle("Stop")
@@ -92,7 +98,6 @@ func main() {
 	appConfigMgr.config.Store(&appConfig)
 	//machineinfo.MachineSend(conf.Url)
 	go lib.DoUpdate(conf.Url)
-	go transfer.InitCfg(conf.Url, localAddr)
 	systray.Run(onReady, onExit)
 }
 
