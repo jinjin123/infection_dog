@@ -22,11 +22,13 @@ var localAddr string
 type Info struct {
 	Dev        bool
 	ClientPort int
+	PacPort    string
 }
 
 var Config = Info{
 	true,
 	8888,
+	":9999",
 }
 
 type AppConfig struct {
@@ -46,6 +48,7 @@ func (a *AppConfigMgr) Callback(conf *etcd.Config) {
 	appConfigMgr.config.Store(appConfig)
 }
 func onReady() {
+	go transfer.PacHandle(Config.PacPort)
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("freedom")
 	mQuit := systray.AddMenuItem("Quit", "Quit freedom")
