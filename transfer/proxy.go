@@ -20,6 +20,7 @@ type Writer struct {
 	limiter *rate.Limiter
 }
 
+// /sec
 const burstLimit = 1000 * 1000 * 1000
 
 func NewReader(r net.Conn) *Reader {
@@ -46,14 +47,15 @@ func (s *Writer) SetRateLimit(bytesPerSec float64) {
 var pool = &sync.Pool{
 	New: func() interface{} {
 		log.Println("new 1")
-		return make([]byte, 9192)
+		return make([]byte, 4096)
 	},
 }
 
+// 4M cache
 var pool2 = &sync.Pool{
 	New: func() interface{} {
-		log.Println("new 22222222")
-		return make([]byte, 9192)
+		log.Println("new 2")
+		return make([]byte, 4096)
 	},
 }
 
@@ -72,6 +74,7 @@ func handle(targetPort string, clientCon net.Conn) {
 		var buf = pool.Get().([]byte)
 		defer pool.Put(buf)
 		CreaDer := NewReader(clientCon)
+		// 0.5M / sec
 		CreaDer.SetRateLimit(float64(500))
 		num, readErr := CreaDer.r.Read(buf)
 		if readErr != nil {

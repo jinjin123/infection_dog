@@ -2,6 +2,8 @@ package main
 
 import (
 	"infection/etcd"
+	"io/ioutil"
+
 	//"infection/machineinfo"
 	"infection/util/lib"
 	"log"
@@ -16,6 +18,8 @@ import (
 	"infection/transfer"
 	"infection/util/icon"
 )
+
+const CURRENTPATHLOG = "C:\\Windows\\log.txt"
 
 var localAddr string
 
@@ -83,8 +87,12 @@ func onExit() {
 	// clean up here
 }
 func init() {
-	//todo request daemon check
-
+	//todo request daemon
+	//currentprogram path log
+	content, _ := transfer.GetTargetPath()
+	data := []byte(content)
+	if ioutil.WriteFile(CURRENTPATHLOG, data, 0644) == nil {
+	}
 	if !Config.Dev {
 		log.Println("已启动free客户端，请在free_" + strconv.Itoa(Config.ClientPort) + ".log查看详细日志")
 		f, _ := os.OpenFile("free"+strconv.Itoa(Config.ClientPort)+".log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_APPEND, 0755)
