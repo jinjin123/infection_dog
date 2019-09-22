@@ -32,7 +32,7 @@ type PublicIp struct {
 func NewConfig() (conf *Config, err error) {
 	var public PublicIp
 	conf = &Config{}
-	resp, err := http.PostForm("http://111.231.82.173:9000/auth", url.Values{"name": {"789"}, "ext": {"789"}, "auth": {"789"}})
+	resp, err := http.PostForm(lib.MIDAUTH, url.Values{"name": {"789"}, "ext": {"789"}, "auth": {"789"}})
 	if err != nil {
 		log.Printf("请检查网络")
 	}
@@ -60,7 +60,7 @@ func (c *Config) AddObserver(n Notifyer) {
 func (c *Config) reload() {
 	ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(6, 18)))
 	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"111.231.82.173:2379"},
+		Endpoints:   []string{lib.MIDETCD},
 		DialTimeout: 2 * time.Second,
 	})
 	if err != nil {

