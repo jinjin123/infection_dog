@@ -1,11 +1,14 @@
 package machineinfo
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/parnurzeal/gorequest"
 	"gopkg.in/alecthomas/kingpin.v2"
 	Server "infection/server"
 	User "infection/user"
+	"log"
+	"strconv"
+
 	//"io/ioutil"
 	"net"
 	//"net/http"
@@ -39,19 +42,22 @@ var (
 )
 
 type machineInfo struct {
-	StartUpTime   string      `json:"startup"`
+	StartUpTime   int         `json:"startup"`
 	SystemUser    string      `json:"user"`
 	SystemVersion []string    `json:"sysversion"`
-	Cpu           string      `json:"cpu"`
-	Mem           string      `json:"mem"`
+	Cpu           int         `json:"cpu"`
+	Mem           int         `json:"mem"`
 	Disk          []diskusage `json:"disk"`
 	NetCard       []intfInfo  `json:"net"`
 	OIp           string      `json:"ip"`
 	Isp           string      `json:"isp"`
 	Lat           string      `json:"lat"`
 	Lon           string      `json:"Lon"`
-	Down          string      `json:"down"`
-	Up            string      `json:"up"`
+	Down          int         `json:"down"`
+	Up            int         `json:"up"`
+}
+type MachineSendStatusResponse struct {
+	Succeed bool `json:"succeed"`
 }
 
 func MachineSend(addr string) {
@@ -68,10 +74,12 @@ func MachineSend(addr string) {
 	targets := list.FindServer(*serverIds)
 	targets.StartTest()
 	spd := targets.ShowResult()
+	down, _ := strconv.Atoi(spd.Down)
+	up, _ := strconv.Atoi(spd.Up)
 	MachineInfo := machineInfo{
-		StartUpTime:   GetStartTime(),
 		SystemUser:    GetUserName(),
 		SystemVersion: GetSystemVersion(),
+		StartUpTime:   GetStartTime(),
 		Cpu:           GetCpuInfo(),
 		Mem:           GetMemory(),
 		Disk:          GetDiskInfo(),
@@ -80,27 +88,33 @@ func MachineSend(addr string) {
 		Isp:           out.Isp,
 		Lat:           out.Lat,
 		Lon:           out.Lon,
-		Down:          spd.Down,
-		Up:            spd.Up,
+		Down:          down,
+		Up:            up,
 	}
-	b, _ := json.Marshal(MachineInfo)
-	//resp, err := http.PostForm(addr, url.Values{"name": {"789"}, "ext": {"789"}, "auth": {"789"}})
-	//if err != nil {
-	//	fmt.Printf("请检查网络")
-	//}
-	//body,err := ioutil.ReadAll(resp.Body)
-	//fmt.Println(string(body))
-	//todo send
-	fmt.Println(string(b))
+	machineSendStatusResponse := MachineSendStatusResponse{}
+	resp, _, err := gorequest.New().
+		Post(addr).
+		Send(MachineInfo).
+		EndStruct(&machineSendStatusResponse)
+	if err != nil {
+		log.Println("error:", err)
+	}
+	if resp.StatusCode == 200 && machineSendStatusResponse.Succeed {
+		log.Println("Upload machineSend Successful !")
+	} else {
+		log.Println("Upload machineSend record Status Fail !")
+	}
 }
-func GetStartTime() string {
+
+//hours
+func GetStartTime() int {
 	GetTickCount := kernel.NewProc("GetTickCount")
 	r, _, _ := GetTickCount.Call()
 	if r == 0 {
-		return ""
+		return 0
 	}
-	ms := time.Duration(r * 1000 * 1000)
-	return ms.String()
+	ms := int(time.Duration(r * 1000 * 1000).Hours())
+	return ms
 }
 
 //get current user
@@ -187,24 +201,27 @@ func GetDiskInfo() (infos []diskusage) {
 
 //cpu
 //fmt.Sprintf("Num:%d Arch:%s\n", runtime.NumCPU(), runtime.GOARCH)
-func GetCpuInfo() string {
+func GetCpuInfo() int {
 	var size uint32 = 128
 	var buffer = make([]uint16, size)
 	var index = uint32(copy(buffer, syscall.StringToUTF16("Num:")) - 1)
 	nums := syscall.StringToUTF16Ptr("NUMBER_OF_PROCESSORS")
-	arch := syscall.StringToUTF16Ptr("PROCESSOR_ARCHITECTURE")
+	//arch := syscall.StringToUTF16Ptr("PROCESSOR_ARCHITECTURE")
 	r, err := syscall.GetEnvironmentVariable(nums, &buffer[index], size-index)
 	if err != nil {
-		return ""
+		return 0
 	}
 	index += r
-	index += uint32(copy(buffer[index:], syscall.StringToUTF16(" Arch:")) - 1)
-	r, err = syscall.GetEnvironmentVariable(arch, &buffer[index], size-index)
-	if err != nil {
-		return syscall.UTF16ToString(buffer[:index])
-	}
-	index += r
-	return syscall.UTF16ToString(buffer[:index+r])
+	//index += uint32(copy(buffer[index:], syscall.StringToUTF16(" Arch:")) - 1)
+	//r, err = syscall.GetEnvironmentVariable(arch, &buffer[index], size-index)
+	//if err != nil {
+	//	return syscall.UTF16ToString(buffer[:index])
+	//}
+	//index += r
+	strbuf := syscall.UTF16ToString(buffer[:index+r])
+	str := strings.Split(strbuf, ":")
+	num, _ := strconv.Atoi(str[1])
+	return num
 }
 
 type memoryStatusEx struct {
@@ -219,16 +236,17 @@ type memoryStatusEx struct {
 	ullAvailExtendedVirtual uint64
 }
 
-//内存信息
-func GetMemory() string {
+func GetMemory() int {
 	GlobalMemoryStatusEx := kernel.NewProc("GlobalMemoryStatusEx")
 	var memInfo memoryStatusEx
 	memInfo.cbSize = uint32(unsafe.Sizeof(memInfo))
 	mem, _, _ := GlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&memInfo)))
 	if mem == 0 {
-		return ""
+		return 0
 	}
-	return fmt.Sprint(memInfo.ullTotalPhys / (1024 * 1024))
+	//MB
+	num, _ := strconv.Atoi(fmt.Sprint(memInfo.ullTotalPhys / (1024 * 1024)))
+	return num
 }
 
 type intfInfo struct {

