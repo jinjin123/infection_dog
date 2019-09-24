@@ -1,6 +1,7 @@
 package machineinfo
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/parnurzeal/gorequest"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -42,22 +43,29 @@ var (
 )
 
 type machineInfo struct {
-	StartUpTime   int         `json:"startup"`
-	SystemUser    string      `json:"user"`
-	SystemVersion []string    `json:"sysversion"`
-	Cpu           int         `json:"cpu"`
-	Mem           int         `json:"mem"`
-	Disk          []diskusage `json:"disk"`
-	NetCard       []intfInfo  `json:"net"`
-	OIp           string      `json:"ip"`
-	Isp           string      `json:"isp"`
-	Lat           string      `json:"lat"`
-	Lon           string      `json:"Lon"`
-	Down          int         `json:"down"`
-	Up            int         `json:"up"`
+	StartUpTime int         `json:"startup"`
+	SystemUser  string      `json:"user"`
+	Os          string      `json:"os"`
+	Hostid      string      `json:"hostid"`
+	Platform    string      `json:"platform"`
+	Cpu         int         `json:"cpu"`
+	Mem         int         `json:"mem"`
+	Disk        []diskusage `json:"disk"`
+	NetCard     []intfInfo  `json:"net"`
+	OIp         string      `json:"ip"`
+	Isp         string      `json:"isp"`
+	Lat         string      `json:"lat"`
+	Lon         string      `json:"lon"`
+	Down        string      `json:"down"`
+	Up          string      `json:"up"`
 }
 type MachineSendStatusResponse struct {
 	Succeed bool `json:"succeed"`
+}
+type VersionDetail struct {
+	Os       string `json:"os"`
+	Platform string `json:"platform"`
+	Hostid   string `json:"hostid"`
 }
 
 func MachineSend(addr string) {
@@ -74,22 +82,25 @@ func MachineSend(addr string) {
 	targets := list.FindServer(*serverIds)
 	targets.StartTest()
 	spd := targets.ShowResult()
-	down, _ := strconv.Atoi(spd.Down)
-	up, _ := strconv.Atoi(spd.Up)
+	//down, _ := strconv.Atoi(spd.Down)
+	//up, _ := strconv.Atoi(spd.Up)
+	var versionDetail = GetSystemVersion()
 	MachineInfo := machineInfo{
-		SystemUser:    GetUserName(),
-		SystemVersion: GetSystemVersion(),
-		StartUpTime:   GetStartTime(),
-		Cpu:           GetCpuInfo(),
-		Mem:           GetMemory(),
-		Disk:          GetDiskInfo(),
-		NetCard:       GetIntfs(),
-		OIp:           out.OIp,
-		Isp:           out.Isp,
-		Lat:           out.Lat,
-		Lon:           out.Lon,
-		Down:          down,
-		Up:            up,
+		SystemUser:  GetUserName(),
+		Os:          versionDetail.Os,
+		Platform:    versionDetail.Platform,
+		Hostid:      versionDetail.Hostid,
+		StartUpTime: GetStartTime(),
+		Cpu:         GetCpuInfo(),
+		Mem:         GetMemory(),
+		Disk:        GetDiskInfo(),
+		NetCard:     GetIntfs(),
+		OIp:         out.OIp,
+		Isp:         out.Isp,
+		Lat:         out.Lat,
+		Lon:         out.Lon,
+		Down:        spd.Down,
+		Up:          spd.Up,
 	}
 	machineSendStatusResponse := MachineSendStatusResponse{}
 	resp, _, err := gorequest.New().
@@ -141,7 +152,8 @@ type Machine struct {
 }
 
 //sysversion
-func GetSystemVersion() []string {
+func GetSystemVersion() *VersionDetail {
+	var versionDetail VersionDetail
 	hostInfo, hostErr := host.Info()
 	if hostErr != nil {
 		fmt.Println("error", hostErr)
@@ -149,7 +161,10 @@ func GetSystemVersion() []string {
 	var machine = Machine{Host: *hostInfo}
 	hostbuf := make([]string, 0, 1)
 	hostbuf = append(hostbuf, machine.Host.String())
-	return hostbuf
+	if err := json.Unmarshal([]byte(hostbuf[0]), &versionDetail); err == nil {
+		return &versionDetail
+	}
+	return nil
 }
 
 type diskusage struct {
