@@ -75,7 +75,7 @@ func handle(targetPort string, clientCon net.Conn) {
 		defer pool.Put(buf)
 		CreaDer := NewReader(clientCon)
 		// 0.5M / sec
-		CreaDer.SetRateLimit(float64(500))
+		CreaDer.SetRateLimit(float64(1000))
 		num, readErr := CreaDer.r.Read(buf)
 		if readErr != nil {
 			log.Print("readErr ", readErr, CreaDer.r.RemoteAddr())
@@ -84,7 +84,7 @@ func handle(targetPort string, clientCon net.Conn) {
 			return
 		}
 		TarDer := NewWriter(targetConn)
-		TarDer.SetRateLimit(float64(500))
+		TarDer.SetRateLimit(float64(1000))
 		w, writeErr := TarDer.w.Write(buf[:num])
 		if writeErr != nil {
 			log.Print("writeErr ", writeErr, w)
@@ -101,7 +101,7 @@ func handleServerConn(targetConn *Writer, clientCon *Reader) {
 		var buf = pool2.Get().([]byte)
 		defer pool2.Put(buf)
 		num, readErr := targetConn.w.Read(buf)
-		targetConn.SetRateLimit(float64(500))
+		targetConn.SetRateLimit(float64(1000))
 		if readErr != nil {
 			log.Print("readErr ", readErr, targetConn.w.RemoteAddr())
 			targetConn.w.Close()
@@ -110,7 +110,7 @@ func handleServerConn(targetConn *Writer, clientCon *Reader) {
 		}
 
 		w, writeErr := clientCon.r.Write(buf[:num])
-		clientCon.SetRateLimit(float64(500))
+		clientCon.SetRateLimit(float64(1000))
 		if writeErr != nil {
 			log.Print("writeErr ", writeErr, w)
 			clientCon.r.Close()
