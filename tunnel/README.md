@@ -1,1 +1,1 @@
-# block mode  one port one user 
+# request the hostid to check really to open the shell, only one by one, if all to connect server tcp will by crash
