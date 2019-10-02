@@ -2,17 +2,32 @@ package transfer
 
 import (
 	"errors"
+	"fmt"
 	"golang.org/x/sys/windows/registry"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
-func init() {
-	setWindowsPACRegistry = registerPAC
-	//SetAutoRun = ResgisterAutoRun
+func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, Data[0])
+}
+
+func PacHandle(PacPort string) {
+	switch runtime.GOOS {
+	case "darwin":
+	case "windows":
+		registerPAC()
+	case "linux":
+	}
+	http.HandleFunc("/pac", handler)
+	if err := http.ListenAndServe(PacPort, nil); err != nil {
+		log.Println("pac Faild", err)
+	}
 }
 
 func ResgisterAutoRun() {

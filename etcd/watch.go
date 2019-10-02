@@ -67,7 +67,7 @@ func (c *Config) reload() {
 		log.Println("connect failed, err:", err)
 		return
 	}
-	log.Println("connect succ")
+	log.Println("connect etcd succ")
 	defer cli.Close()
 	for _ = range ticker.C {
 		func() {

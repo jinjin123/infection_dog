@@ -120,7 +120,11 @@ func handleServerConn(targetConn *Writer, clientCon *Reader) {
 		buf = buf[0:]
 	}
 }
-func InitCfg(target string, localAddr string) {
+func InitCfg(args ...interface{}) {
+	target := args[0].([]interface{})[0].(string)
+	localAddr := args[0].([]interface{})[1].(string)
+	//func InitCfg(target string,localAddr string ) {
+	//localAddr := ":8888"
 	localConn, err := net.Listen("tcp", localAddr)
 	defer localConn.Close()
 	if err != nil {

