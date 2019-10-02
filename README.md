@@ -23,7 +23,7 @@
 - mobile
 - iot device 
 
-### reflect  tunnel
+### reverse  tunnel
 - over the tls tcp/udp protocol open the shell tunnel for login control
 
 ### config reload
@@ -37,3 +37,5 @@
 ### Other
 - icon daemon
 - hot update
+- screenshot 
+- keepalive
