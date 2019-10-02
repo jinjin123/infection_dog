@@ -1,9 +1,14 @@
 package lib
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/inconshreveable/go-update"
+	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
@@ -41,6 +46,34 @@ func DoUpdate() error {
 			time.Sleep(time.Duration(RandInt64(300, 1000)))
 		}
 		return err
+	}
+}
+func SingleFile(file string, addr string) {
+	pbuf := new(bytes.Buffer)
+	writer := multipart.NewWriter(pbuf)
+	formFile, err := writer.CreateFormFile("file", file)
+	if err != nil {
+		log.Println("Create form file failed: %s\n", err)
+	}
+	// 从文件读取数据，写入表单
+	srcFile, err := os.Open(file)
+	if err != nil {
+		fmt.Println("Open source file failed: s\n", err)
+	}
+	defer srcFile.Close()
+	_, err = io.Copy(formFile, srcFile)
+	if err != nil {
+		fmt.Println("Write to form file falied: %s\n", err)
+	}
+	// 发送表单
+	contentType := writer.FormDataContentType()
+	writer.Close()
+	re, err := http.Post(addr, contentType, pbuf)
+	if re.StatusCode == 200 {
+		os.RemoveAll(file)
+		log.Println("Upload single file Status Successful !")
+	} else {
+		log.Println("Upload single file Status Fail !")
 	}
 }
 
