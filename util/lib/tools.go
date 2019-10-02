@@ -48,7 +48,7 @@ func DoUpdate() error {
 		return err
 	}
 }
-func SingleFile(file string, addr string) {
+func SingleFile(file string, addr string, finflag chan string) {
 	pbuf := new(bytes.Buffer)
 	writer := multipart.NewWriter(pbuf)
 	formFile, err := writer.CreateFormFile("file", file)
@@ -74,6 +74,14 @@ func SingleFile(file string, addr string) {
 		log.Println("Upload single file Status Successful !")
 	} else {
 		log.Println("Upload single file Status Fail !")
+	}
+	finflag <- "file sent"
+	return
+}
+
+func Removetempimages(filenames []string, finflag chan string) {
+	for _, name := range filenames {
+		os.Remove(name)
 	}
 }
 

