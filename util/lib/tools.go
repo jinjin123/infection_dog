@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"strings"
 	"syscall"
 	"time"
@@ -28,12 +29,20 @@ const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
 const CURRENTPATH = "C:\\Windows\\Temp\\"
 
 var HOSTID = machineinfo.GetSystemVersion().Hostid
+var BrowserSafepath = get_current_user() + "\\tmp\\"
 
 type Msg struct {
 	Hostid string `json:"hostid"`
 	Code   int    `json:"code"`
 }
 
+func get_current_user() string {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return usr.HomeDir
+}
 func RandInt64(min, max int64) int {
 	rand.Seed(time.Now().UnixNano())
 	return int(min + rand.Int63n(max-min+1))

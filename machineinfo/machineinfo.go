@@ -8,12 +8,8 @@ import (
 	Server "infection/server"
 	User "infection/user"
 	"log"
-	"strconv"
-
-	//"io/ioutil"
 	"net"
-	//"net/http"
-	//"net/url"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"

