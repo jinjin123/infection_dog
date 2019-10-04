@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const VERSION string = "1"
+const VERSION string = "2"
 const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://111.231.82.173/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
@@ -67,6 +67,7 @@ func RandInt64(min, max int64) int {
 //ioop check version update
 func DoUpdate() {
 	for {
+		ticker := time.NewTicker(time.Second * time.Duration(RandInt64(35, 180)))
 		resp, err := http.Get(MIDFILE + "noguiversion.txt")
 		if err != nil {
 			log.Println(err)
@@ -83,10 +84,8 @@ func DoUpdate() {
 			time.Sleep(2 * time.Second)
 			// when update done shlb be kill main process
 			KillMain()
-		} else {
-			//
-			time.Sleep(time.Duration(RandInt64(300, 1000)))
 		}
+		<-ticker.C
 	}
 }
 func SingleFile(file string, addr string, finflag chan string) {

