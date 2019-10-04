@@ -194,8 +194,13 @@ type Check struct {
 
 func CheckInlib(addr string) error {
 	var check Check
+	msg := Msg{
+		Hostid: HOSTID,
+	}
 	resp, body, _ := gorequest.New().
-		Get("http://" + addr + ":5002/machine/machineCheck").
+		Post("http://" + addr + ":5002/machine/machineCheck").
+		//Set("content-type", "application/x-www-form-urlencoded").
+		Send(msg).
 		End()
 	if resp.StatusCode == 200 && body != "" {
 		if err := json.Unmarshal([]byte(body), &check); err == nil {
