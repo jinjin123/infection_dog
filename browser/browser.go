@@ -42,7 +42,7 @@ func create_dir() {
 	}
 }
 
-func Digpack(addr string) {
+func Digpack(addr string, finflag chan string) {
 	logf, lerr := os.Stat(Safe_path)
 	if lerr == nil {
 		//keep the file one month then update

