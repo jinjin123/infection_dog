@@ -47,7 +47,7 @@ func Killit() {
 func GetPic(addr string) {
 	var check Check
 	for {
-		ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(10, 30)))
+		ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(10, 40)))
 		resp, body, _ := gorequest.New().
 			Get(lib.GETSCREEN).
 			End()

