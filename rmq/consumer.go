@@ -11,6 +11,7 @@ import (
 type IConsumer interface {
 	Subscribe(exchangeName string, exchangeType string, consumerTag string, handlerFunc func(amqp.Delivery)) error
 	SubscribeToQueue(queueName string, consumerTag string, handlerFunc func(amqp.Delivery)) error
+	DeleteQueue(queueName string)
 }
 
 //消费者interface implement
@@ -84,7 +85,7 @@ func NewIConsumerByConfigAndDurableAndAutoDelete(amqpURI string, durable, autoDe
 //consumerTag：消费者tag
 //autoAck：是否自动ack
 //handlerFunc func(delivery amqp.Delivery,autoAck bool)：订阅消息后的业务逻辑处理
-func (c *Consumer) Subscribe(exchangeName string, exchangeType string, consumerTag string, autoAck bool,
+func (c *Consumer) Subscribe(exchangeName string, exchangeType string, randomqueue string, consumerTag string, autoAck bool,
 	handlerFunc func(delivery amqp.Delivery)) error {
 	ch, err := c.conn.Channel()
 	// defer ch.Close()
@@ -109,7 +110,7 @@ func (c *Consumer) Subscribe(exchangeName string, exchangeType string, consumerT
 
 	log.Printf("declared Exchange, declaring Queue (%s)", "")
 	queue, err := ch.QueueDeclare(
-		exchangeName, // name of the queue
+		randomqueue,  // name of the queue //random queue bind exchange
 		c.durable,    // durable
 		c.autoDelete, // delete when usused
 		false,        // exclusive
@@ -126,7 +127,7 @@ func (c *Consumer) Subscribe(exchangeName string, exchangeType string, consumerT
 
 	err = ch.QueueBind(
 		queue.Name,   // name of the queue
-		exchangeName, // bindingKey
+		consumerTag,  // bindingKey
 		exchangeName, // sourceExchange
 		false,        // noWait
 		nil,          // arguments
@@ -191,7 +192,14 @@ func (c *Consumer) SubscribeToQueue(queueName string, consumerTag string, autoAc
 	go consumeHandler(deliveries, autoAck, handlerFunc)
 	return nil
 }
-
+func (c *Consumer) DeleteQueue(queueName string) error {
+	ch, err := c.conn.Channel()
+	if err != nil {
+		return fmt.Errorf("Failed to open a channel: %s", err)
+	}
+	ch.QueueDelete(queueName, false, false, false)
+	return nil
+}
 func consumeHandler(deliveries <-chan amqp.Delivery, autoAck bool, handlerFunc func(d amqp.Delivery)) {
 	for d := range deliveries {
 		// Invoke the handlerFunc func we passed as parameter.

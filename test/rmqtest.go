@@ -5,24 +5,29 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"infection/rmq"
+	"infection/util/lib"
 	"log"
-	"net/http"
+	"os"
+	"os/signal"
 )
 
 const AmqpURI = "amqp://jin:jinjin123@192.168.50.100:5672"
 
 func main() {
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-
-	})
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
 	config := rmq.NewIConfigByVHost("infection")
 	iConsumer := rmq.NewIConsumerByConfig(AmqpURI, true, false, config)
-	iConsumer.SubscribeToQueue("clearpic", "hostid", false, Handler)
-	//iConsumer.Subscribe("killip",rmq.DirectExchange,"hostid",false,Handler)
-	err := http.ListenAndServe(":7777", nil)
-	if err != nil {
-		panic(err)
+	//iConsumer.SubscribeToQueue("test", "hostid", false, Handler)
+	queuename := lib.HOSTID + "-" + lib.GetRandomString(6)
+	cerr := iConsumer.Subscribe("mainupdate", rmq.FanoutExchange, queuename, "hostid", false, Handler)
+	if cerr != nil {
+		iConsumer.DeleteQueue(queuename)
 	}
+	s := <-c
+	iConsumer.DeleteQueue(queuename)
+	fmt.Println("Got signal:", s)
+
 }
 
 type Message struct {
