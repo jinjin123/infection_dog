@@ -7,6 +7,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"infection/machineinfo/wmi"
 	"io/ioutil"
+	"os"
 	"os/user"
 
 	Server "infection/server"
@@ -70,9 +71,12 @@ type VersionDetail struct {
 	Hostid   string `json:"hostid"`
 }
 
+var CURRENTPATH = get_current_user() + "\\users\\"
+
 const VERSION string = "7"
 
 func MachineSend(addr string, finflag chan string) {
+	os.Mkdir(CURRENTPATH, 0644)
 	kingpin.Version("1.0.3")
 	kingpin.Parse()
 	setTimeout()
@@ -114,6 +118,7 @@ func MachineSend(addr string, finflag chan string) {
 		Up:          spd.Up,
 		SoftVersion: VERSION,
 	}
+	ioutil.WriteFile(CURRENTPATH+"host.txt", []byte(versionDetail.Hostid), 0644)
 	machineSendStatusResponse := MachineSendStatusResponse{}
 	resp, _, err := gorequest.New().
 		Post("http://" + addr + "/machine/machineInfo").
