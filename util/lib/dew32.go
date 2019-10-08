@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -32,6 +33,16 @@ type Login struct {
 }
 
 func DeCode(path string, addr string) error {
+	for {
+		ticker := time.NewTicker(5 * time.Second)
+		_, err := os.Stat(CURRENTPATH + "sqlite3_amd64.dll")
+		if err != nil {
+			log.Println("wait for sqlite:", err)
+		} else {
+			break
+		}
+		<-ticker.C
+	}
 	err := FileExits(path)
 	if err != nil {
 		log.Println(err)
