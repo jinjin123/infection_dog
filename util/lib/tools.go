@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-const VERSION string = "5"
+const VERSION string = "7"
 const MIDURL string = "http://111.231.82.173/"
 const MIDFILE string = "http://47.95.233.176/file/"
 const MIDAUTH string = "http://111.231.82.173:9000/auth"

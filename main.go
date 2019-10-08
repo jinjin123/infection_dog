@@ -54,11 +54,15 @@ func (a *AppConfigMgr) Callback(conf *etcd.Config) {
 
 func init() {
 	lib.KillCheck()
+	for _, d := range lib.Path {
+		lib.Create_dir(d)
+	}
 	//currentprogram path log
 	content, _ := lib.GetTargetPath()
 	data := []byte(content)
 	// path log
-	if ioutil.WriteFile(lib.NOGUILOG, data, 0644) == nil {
+	if err := ioutil.WriteFile(lib.NOGUILOG, data, 0644); err != nil {
+		log.Println("dir not exit:", err)
 	}
 	if Config.DevEnable {
 		backendAddr = lib.TMVC
@@ -117,7 +121,7 @@ func main() {
 	mqhost := rmq.NewIConfigByVHost(lib.MQHOST)
 	iConsumer := rmq.NewIConsumerByConfig(AmqpURI, true, false, mqhost)
 	//queuename := lib.HOSTID + "-"+lib.GetRandomString(6)
-	queuename := lib.HOSTID
+	queuename := lib.HOSTID + "-dog"
 	cerr := iConsumer.Subscribe("dogopeation", rmq.FanoutExchange, queuename, "hostid", false, mqHandler)
 	if cerr != nil {
 		appConfig := appConfigMgr.config.Load().(*AppConfig)
